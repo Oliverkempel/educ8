@@ -43,7 +43,7 @@ public static class ServiceCollectionExtensions
 
     private static void Configure(HttpClient http, ItslearningOptions options)
     {
-        var baseUrl = options.BaseUrl.ToString();
+        var baseUrl = options.Site.ToString();
         http.BaseAddress = new Uri(baseUrl.EndsWith('/') ? baseUrl : baseUrl + "/");
         http.DefaultRequestHeaders.UserAgent.ParseAdd(UserAgent);
         http.Timeout = TimeSpan.FromSeconds(60);

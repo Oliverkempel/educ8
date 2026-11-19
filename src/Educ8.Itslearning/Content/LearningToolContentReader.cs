@@ -171,7 +171,7 @@ public sealed class LearningToolContentReader : ICourseFileSource, IDisposable
     /// <summary>Opens the element's tool page (the content inside itslearning's iframe).</summary>
     internal async Task<(Uri FinalUri, string Html)> OpenToolAsync(int elementId, CancellationToken ct)
     {
-        var viewUrl = new Uri(_options.BaseUrl, $"LearningToolElement/ViewLearningToolElement.aspx?LearningToolElementId={elementId}");
+        var viewUrl = new Uri(_options.Site, $"LearningToolElement/ViewLearningToolElement.aspx?LearningToolElementId={elementId}");
 
         (Uri FinalUri, string Html)? view = null;
         if (_hasSession)

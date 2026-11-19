@@ -38,7 +38,7 @@ public sealed class FileToolTests : IAsyncLifetime
             if (path == "/restapi/personal/sso/url/v1")
             {
                 lastElement = int.Parse(Uri.UnescapeDataString(req.RequestUri.Query).Split("LearningToolElementId=")[1].Split('&')[0]);
-                return FakeItslearning.Json("""{"Url":"https://sdu.itslearning.com/sso-login"}""");
+                return FakeItslearning.Json("""{"Url":"https://school.itslearning.com/sso-login"}""");
             }
             foreach (var (id, f) in Files)
                 if (path == $"/restapi/personal/courses/resources/{id}/v1") return FakeItslearning.Json(Resource(id, 5009, f.Name));
@@ -49,7 +49,7 @@ public sealed class FileToolTests : IAsyncLifetime
         {
             var u = req.RequestUri!;
             if (u.AbsolutePath == "/sso-login" || u.AbsolutePath.Contains("ViewLearningToolElement"))
-                return Fixtures.Html(Fixtures.Read("view_page_2266446.html"), "https://sdu.itslearning.com/LearningToolElement/ViewLearningToolElement.aspx");
+                return Fixtures.Html(Fixtures.Read("view_page_2266446.html"), "https://school.itslearning.com/LearningToolElement/ViewLearningToolElement.aspx");
             if (u.Host == "platform.itslearning.com")
                 return Files[lastElement].Office
                     ? Fixtures.Html(Fixtures.Read("file_office_2165906.html"), $"https://resource.itslearning.com/File/View.aspx?LearningObjectId={lastElement}&LearningObjectInstanceId=5")

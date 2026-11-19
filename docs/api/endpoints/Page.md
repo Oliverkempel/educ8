@@ -1,6 +1,6 @@
 # Page
 
-> Auto-generated from https://sdu.itslearning.com/restapi/help — do not hand-edit; regenerate instead.
+> Auto-generated from an itslearning site's /restapi/help — do not hand-edit; regenerate instead.
 
 **Overview:** Endpoint for page for personal API. Requests will be forwarded to the page api. We want to abstract SharableObjectId (learningObjectId) and LearningObjectInstanceId from the client (e.g. mobile), therefore endpoints use ElementId. Secured with Oauth2, and requires OAuth2 API scope .
 

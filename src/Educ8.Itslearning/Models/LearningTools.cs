@@ -15,7 +15,7 @@ public enum ResourceKind
     LearningPath,
 }
 
-/// <summary>Known itslearning learning tool ids (observed at SDU, 2026-11-18).</summary>
+/// <summary>Known itslearning learning tool ids (observed live, 2026-11-18).</summary>
 public static class LearningTools
 {
     public const int Page = 5;

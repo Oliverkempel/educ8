@@ -1,6 +1,6 @@
 # itslearning REST API — overview
 
-Source: https://sdu.itslearning.com/restapi/help (ASP.NET Web API help page). Studied 2026-11-18.
+Source: https://school.itslearning.com/restapi/help (ASP.NET Web API help page). Studied 2026-11-18.
 
 This file is the hand-written summary. **[live-findings.md](live-findings.md) has what live calls showed (2026-11-18) and takes precedence**: 5-minute tokens, rotating refresh tokens, `LearningToolId` meanings, and the SSO web chain for files and pages.
 
@@ -14,10 +14,10 @@ The full per-endpoint reference is auto-generated:
 
 | Thing | Value |
 |---|---|
-| Base URL (SDU) | `https://sdu.itslearning.com/` — paths below are relative to it, e.g. `GET https://sdu.itslearning.com/restapi/personal/person/v1` |
-| SDU customer id | `900937` (short name `SDU`, culture `da-DK`) |
-| Personal REST API enabled at SDU | Yes (`IsPersonalRestApiEnabled: true` from `restapi/sites/shortnames/sdu/v1`) |
-| SDU login | Federated only (`IsNativeLoginDefault: false`): "SDU Office 365" and "WAYF" providers |
+| Base URL | `https://school.itslearning.com/` (your school's site) — paths below are relative to it, e.g. `GET https://school.itslearning.com/restapi/personal/person/v1` |
+| Customer id | per site, from `restapi/sites/shortnames/<short name>/v1` |
+| Personal REST API enabled | Yes on the site we used (`IsPersonalRestApiEnabled: true` from `restapi/sites/shortnames/<short name>/v1`) |
+| Login | Federated only on the site we used (`IsNativeLoginDefault: false`): the school's Microsoft (Office 365) provider and "WAYF" |
 | Formats | JSON (`application/json`) and XML. Use JSON. |
 | Size | 413 endpoints in 55 controllers: 222 GET, 103 POST, 60 PUT, 25 DELETE, 3 PATCH |
 | Path casing | Mostly `restapi/...`, a few documented as `RestApi/...` (assume case-insensitive) |
@@ -36,8 +36,8 @@ OAuth2. Unauthenticated calls to personal endpoints return **401**.
 4. Revoke: `DELETE restapi/oauth2/token/v1` (also disables push notifications if it was the last token).
 
 Notes:
-- **Project decision (2026-11-18):** we have a registered client ID and use this authorization code flow. At SDU the sign-in step in (1) goes through **Microsoft (SDU Office 365)**, a federated provider on itslearning's login page. Microsoft only identifies the user. The tokens come from itslearning's `restapi/oauth2/token` and are the only ones the API accepts. See [../notes/decisions.md](../notes/decisions.md).
-- Flow for the MCP server: build the authorize URL → user opens it in a browser → itslearning login → "SDU Office 365" → Microsoft sign-in → redirect to `itsl-itslearning://login/?state=...&code=...` (delivered by page script, not a 302) → check `state` → exchange the code → store the (rotating) refresh token → refresh before `expires_in` (300 s) runs out.
+- **Project decision (2026-11-18):** we have a registered client ID and use this authorization code flow. On our site the sign-in step in (1) goes through **Microsoft (the school's Office 365)**, a federated provider on itslearning's login page. Microsoft only identifies the user. The tokens come from itslearning's `restapi/oauth2/token` and are the only ones the API accepts. See [../notes/decisions.md](../notes/decisions.md).
+- Flow for the MCP server: build the authorize URL → user opens it in a browser → itslearning login → the school's Office 365 provider → Microsoft sign-in → redirect to `itsl-itslearning://login/?state=...&code=...` (delivered by page script, not a 302) → check `state` → exchange the code → store the (rotating) refresh token → refresh before `expires_in` (300 s) runs out.
 - No client secret is needed (verified 2026-11-18).
 - Some endpoints are marked "not available using OAuth2" (e.g. `POST restapi/personal/assignments/v1`, create assignment). Treat them as unavailable to us.
 
@@ -125,7 +125,7 @@ Grouped by usefulness for a **student/teacher-facing MCP server**. Counts are en
 | [LearningObjectivesReports](endpoints/LearningObjectivesReports.md) | 9 | Learning objective progress reports |
 | [Supervisor](endpoints/Supervisor.md) | 1 | Mentees |
 | [PersonRelation](endpoints/PersonRelation.md), [SiteLinks](endpoints/SiteLinks.md) | 1 / 1 | Relations, site links |
-| [Children*](endpoints/Children.md) (5 controllers) | 11 | Parent portal: children's courses/tasks/plans/calendar. Not relevant at SDU (parent portal disabled) |
+| [Children*](endpoints/Children.md) (5 controllers) | 11 | Parent portal: children's courses/tasks/plans/calendar. Not relevant for students (parent portal disabled on our site) |
 | [CoursesGroups](endpoints/CoursesGroups.md), [Projects](endpoints/Projects.md) | 2 / 1 | Course groups admin, project favourites |
 | [FileUpload](endpoints/FileUpload.md) | 1 | Temp file upload (needed for submitting answers) |
 | [LibraryPage](endpoints/LibraryPage.md) | 21 | Same as Page, for library items |
@@ -151,7 +151,7 @@ Grouped by usefulness for a **student/teacher-facing MCP server**. Counts are en
 ## Regenerating the reference
 
 ```bash
-python3 -I docs/api/_generator/crawl.py <crawl_dir>   # crawl_dir must contain index.html (curl https://sdu.itslearning.com/restapi/help)
+python3 -I docs/api/_generator/crawl.py <crawl_dir>   # crawl_dir must contain index.html (curl https://school.itslearning.com/restapi/help)
 python3 -I docs/api/_generator/parse.py <crawl_dir> docs/api
 ```
 

@@ -10,7 +10,7 @@ public class WebPageParserTests
     [Fact]
     public void Finds_signed_tool_iframe_on_view_page()
     {
-        var url = WebPageParsers.ExtensionIframeUrl(Fixtures.Read("view_page_2266446.html"), new Uri("https://sdu.itslearning.com/LearningToolElement/ViewLearningToolElement.aspx"));
+        var url = WebPageParsers.ExtensionIframeUrl(Fixtures.Read("view_page_2266446.html"), new Uri("https://school.itslearning.com/LearningToolElement/ViewLearningToolElement.aspx"));
         Assert.NotNull(url);
         Assert.Equal("platform.itslearning.com", url.Host);
         Assert.Equal("/LoginSSO.aspx", url.AbsolutePath);
@@ -25,7 +25,7 @@ public class WebPageParserTests
         Assert.Equal(5, page.Blocks.Count);
         Assert.All(page.Blocks, b => Assert.Equal("text", b.Kind));
         Assert.Equal("Personal data in itslearning", page.Blocks[0].Title);
-        Assert.Contains("https://mitsdu.dk/en/itsl-persondata", page.Blocks[0].Html);
+        Assert.Contains("https://portal.example.edu/en/itsl-persondata", page.Blocks[0].Html);
     }
 
     [Fact]
@@ -90,7 +90,7 @@ public class LearningToolContentReaderTests
             if (req.RequestUri!.AbsolutePath == "/restapi/personal/sso/url/v1")
             {
                 ssoCalls.Add(req.RequestUri.Query);
-                return FakeItslearning.Json("""{"Url":"https://sdu.itslearning.com/sso-login?ticket=t"}""");
+                return FakeItslearning.Json("""{"Url":"https://school.itslearning.com/sso-login?ticket=t"}""");
             }
             return new HttpResponseMessage(HttpStatusCode.NotFound);
         };
@@ -101,10 +101,10 @@ public class LearningToolContentReaderTests
         return (u.Host, u.AbsolutePath) switch
         {
             // SSO link: signs in and redirects to the element view.
-            ("sdu.itslearning.com", "/sso-login") => Fixtures.Html(Fixtures.Read("view_page_2266446.html"), "https://sdu.itslearning.com" + ViewPath + "?LearningToolElementId=2266446"),
-            ("sdu.itslearning.com", ViewPath) => sessionValid()
+            ("school.itslearning.com", "/sso-login") => Fixtures.Html(Fixtures.Read("view_page_2266446.html"), "https://school.itslearning.com" + ViewPath + "?LearningToolElementId=2266446"),
+            ("school.itslearning.com", ViewPath) => sessionValid()
                 ? Fixtures.Html(Fixtures.Read("view_page_2266446.html"), u.ToString())
-                : Fixtures.Html("<html>logged out</html>", "https://sdu.itslearning.com/log_out.aspx?SessionExpired=0"),
+                : Fixtures.Html("<html>logged out</html>", "https://school.itslearning.com/log_out.aspx?SessionExpired=0"),
             ("platform.itslearning.com", "/LoginSSO.aspx") => Fixtures.Html(Fixtures.Read("page_coursedesc_2266446.html"), "https://page.itslearning.com/PageInstance.aspx?PageId=1"),
             _ => new HttpResponseMessage(HttpStatusCode.NotFound),
         };
@@ -122,7 +122,7 @@ public class LearningToolContentReaderTests
         var reader = sp.GetRequiredService<LearningToolContentReader>();
 
         var page = await reader.ReadPageAsync(2266446);
-        Assert.Contains("odin.sdu.dk", Assert.Single(page.Blocks).Html);
+        Assert.Contains("odin.example.edu", Assert.Single(page.Blocks).Html);
         Assert.Single(ssoCalls);
         Assert.Contains(Uri.EscapeDataString("LearningToolElementId=2266446"), ssoCalls[0]);
 
@@ -161,7 +161,7 @@ public class LearningToolContentReaderTests
         {
             var u = req.RequestUri!;
             if (u.AbsolutePath == "/sso-login" || u.AbsolutePath.Contains("ViewLearningToolElement"))
-                return Fixtures.Html(Fixtures.Read("view_page_2266446.html"), "https://sdu.itslearning.com" + ViewPath);
+                return Fixtures.Html(Fixtures.Read("view_page_2266446.html"), "https://school.itslearning.com" + ViewPath);
             if (u.Host == "platform.itslearning.com")
                 return Fixtures.Html(Fixtures.Read("file_2371764.html"), "https://resource.itslearning.com/File/View.aspx?mode=FileOnly");
             if (u.AbsolutePath == "/Proxy/DownloadRedirect.ashx")
@@ -192,7 +192,7 @@ public class LearningToolContentReaderTests
         using var t = new TestServices();
         t.SignedIn();
         RouteApi(t, []);
-        t.Web.Respond = (_, _) => Fixtures.Html("<html>no access</html>", "https://sdu.itslearning.com/Index.aspx");
+        t.Web.Respond = (_, _) => Fixtures.Html("<html>no access</html>", "https://school.itslearning.com/Index.aspx");
         using var sp = t.Build();
 
         await Assert.ThrowsAsync<ContentUnavailableException>(() => sp.GetRequiredService<LearningToolContentReader>().ReadPageAsync(1));

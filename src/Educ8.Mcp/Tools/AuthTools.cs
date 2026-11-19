@@ -16,7 +16,7 @@ public static class AuthTools
         LoginService login, TokenManager tokens, ItslearningClient client, IOptions<ItslearningOptions> options, Educ8McpOptions mcpOptions, CancellationToken ct) =>
         ToolGuard.RunAsync(login, async () =>
         {
-            var site = options.Value.BaseUrl.Host;
+            var site = options.Value.Site.Host;
             if (await tokens.HasSessionAsync(ct))
             {
                 try
@@ -39,7 +39,7 @@ public static class AuthTools
         }, ct);
 
     [McpServerTool(Name = "login", Title = "Log in to itslearning", Destructive = false, OpenWorld = true)]
-    [Description("Starts the itslearning login. Returns a link for the user to open and sign in with (SDU Office 365). " +
+    [Description("Starts the itslearning login. Returns a link for the user to open and sign in with (their school's login). " +
                  "Show the link and instructions to the user exactly; never ask for their password.")]
     public static Task<string> Login(
         LoginService login, TokenManager tokens, ItslearningClient client,
@@ -62,7 +62,7 @@ public static class AuthTools
 
             var pending = login.Begin();
             return $"""
-                Ask the user to open this link and sign in to itslearning (choose "SDU Office 365"):
+                Ask the user to open this link and sign in to itslearning (with their school's login):
 
                 {pending.AuthorizeUrl}
 

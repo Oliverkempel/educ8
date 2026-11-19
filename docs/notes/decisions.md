@@ -90,14 +90,14 @@ Newest first. Each entry: date, decision, why.
 ## 2026-11-18 — Auth: itslearning OAuth2 with Microsoft login
 
 - We have a registered itslearning OAuth2 **client ID**.
-- The MCP server uses the OAuth2 **authorization code flow** against itslearning (`oauth2/authorize.aspx` → `restapi/oauth2/token`). The user signs in with Microsoft: itslearning's login page sends them to SDU's "Office 365" federated provider, then back to itslearning, which redirects to our `redirect_uri` with a `code`.
+- The MCP server uses the OAuth2 **authorization code flow** against itslearning (`oauth2/authorize.aspx` → `restapi/oauth2/token`). The user signs in with Microsoft: itslearning's login page sends them to the school's "Office 365" federated provider, then back to itslearning, which redirects to our `redirect_uri` with a `code`.
 - Microsoft is only the identity provider here. The API accepts **itslearning-issued** bearer tokens; we don't call Microsoft (Entra ID) ourselves or send Microsoft tokens to the API.
 - Session-cookie auth is dropped as a fallback.
 - Keep the client ID in config or an environment variable (e.g. `ITSLEARNING_CLIENT_ID`), not hard-coded in the code or docs.
-- Why: it's the officially supported flow, works with SDU's federated-only login, and gives refresh tokens, so the user only signs in once.
+- Why: it's the officially supported flow, works with a federated-only school login, and gives refresh tokens, so the user only signs in once.
 
 ## 2026-11-18 — Project start: study the API before building
 
-- Goal: an MCP server that lets an AI assistant work with the itslearning LMS (starting with SDU's instance, `https://sdu.itslearning.com`).
+- Goal: an MCP server that lets an AI assistant work with the itslearning LMS (starting with one university's itslearning site).
 - First step: document the REST API only. No code yet, at the user's request.
 - The API reference in `docs/api/` is generated from the official help page by scripts in `docs/api/_generator/`, so it can be refreshed instead of hand-maintained.

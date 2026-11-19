@@ -7,5 +7,5 @@ Exec=educ8
 Icon=io.github.educ8.Educ8
 Terminal=false
 Categories=Education;GTK;
-Keywords=itslearning;course;calendar;SDU;
+Keywords=itslearning;course;calendar;LMS;
 StartupNotify=true

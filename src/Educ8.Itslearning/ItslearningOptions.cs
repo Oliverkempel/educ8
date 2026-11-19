@@ -3,12 +3,14 @@ namespace Educ8.Itslearning;
 /// <summary>Settings for talking to one itslearning site. Shared by every host (MCP server, desktop app).</summary>
 public sealed class ItslearningOptions
 {
-    public const string DefaultBaseUrl = "https://sdu.itslearning.com";
     public const string DefaultRedirectUri = "itsl-itslearning://login";
     public const string DefaultScope = "All";
 
-    /// <summary>Site base URL, e.g. https://sdu.itslearning.com (no trailing slash needed).</summary>
-    public Uri BaseUrl { get; set; } = new(DefaultBaseUrl);
+    /// <summary>Your school's itslearning site, e.g. https://yourschool.itslearning.com. Required.</summary>
+    public Uri? BaseUrl { get; set; }
+
+    /// <summary>The configured site; throws with a helpful message when it isn't set.</summary>
+    public Uri Site => BaseUrl ?? throw new InvalidOperationException(NotConfigured("BaseUrl", ItslearningSettingsLoader.BaseUrlEnvVar));
 
     /// <summary>OAuth2 client id. Required; never hard-coded.</summary>
     public string ClientId { get; set; } = "";
@@ -25,10 +27,14 @@ public sealed class ItslearningOptions
     /// <summary>Throws if required settings are missing.</summary>
     public void Validate()
     {
+        if (BaseUrl is null)
+            throw new InvalidOperationException(NotConfigured("BaseUrl", ItslearningSettingsLoader.BaseUrlEnvVar));
         if (string.IsNullOrWhiteSpace(ClientId))
-            throw new InvalidOperationException(
-                $"itslearning ClientId is not configured. Set ITSLEARNING_CLIENT_ID or \"ClientId\" in {Path.Combine(DataDirectory, Educ8Paths.ConfigFileName)}.");
+            throw new InvalidOperationException(NotConfigured("ClientId", ItslearningSettingsLoader.ClientIdEnvVar));
         if (string.IsNullOrWhiteSpace(RedirectUri))
             throw new InvalidOperationException("itslearning RedirectUri is not configured.");
     }
+
+    private string NotConfigured(string key, string envVar) =>
+        $"itslearning {key} is not configured. Set {envVar} or \"{key}\" in {Path.Combine(DataDirectory, Educ8Paths.ConfigFileName)}.";
 }

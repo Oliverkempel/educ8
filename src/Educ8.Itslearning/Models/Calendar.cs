@@ -1,8 +1,8 @@
 namespace Educ8.Itslearning.Models;
 
 /// <summary>
-/// A calendar event (<c>calendar/events/v1</c>, <c>courses/{id}/calendarevents/v1</c>). At SDU, timetable events are imported:
-/// the room is in <see cref="EventTitle"/> ("Lecture - Odense U55") and <see cref="ImportDescription"/> ("Odense U55 teacher names").
+/// A calendar event (<c>calendar/events/v1</c>, <c>courses/{id}/calendarevents/v1</c>). Timetable events can be imported from the school's scheduling system:
+/// the room is in <see cref="EventTitle"/> ("Lecture - Campus U55") and <see cref="ImportDescription"/> ("Campus U55 teacher names").
 /// </summary>
 public record CalendarEvent
 {

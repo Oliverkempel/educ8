@@ -1,12 +1,12 @@
 # Live API findings (Phase 0)
 
-Verified **2026-11-18** against `https://sdu.itslearning.com` with a student account, using the spike CLI in `spikes/Phase0.Spike` (throwaway; see its `Usage()` for commands). Where this file and the generated reference disagree, **this file wins**.
+Verified **2026-11-18** against `https://school.itslearning.com` with a student account, using the spike CLI in `spikes/Phase0.Spike` (throwaway; see its `Usage()` for commands). Where this file and the generated reference disagree, **this file wins**.
 
 ## Auth
 
 | Finding | Detail |
 |---|---|
-| Authorization code flow works | `oauth2/authorize.aspx` → SDU login page → "SDU Office 365" → back to authorize page → code |
+| Authorization code flow works | `oauth2/authorize.aspx` → school login page → the school's Office 365 provider → back to authorize page → code |
 | Redirect URI | `itsl-itslearning://login` (exact). `itsl-itslearning`, `…://`, `…://login/` and others are rejected with "The Client id and/or redirect URI is missing or invalid." |
 | Client ID | Looks like the itslearning mobile app's public client (custom `itsl-itslearning://` scheme). Fine for personal use. A distributed product should get its own registration |
 | How the code is delivered | The authorize page returns **HTML (200)** whose script navigates to `itsl-itslearning://login/?state=…&code=…`. There is no HTTP 302. A desktop browser can't open that scheme, so **the code has to be read from the page** (in the spike: from the browser pane's DOM). The code looks like `900937-<hex><suffix>` (customer id prefix) |
@@ -84,8 +84,8 @@ Caveats: this is **web scraping of undocumented pages**, so it may break with it
 - **Download link**: on `resource.itslearning.com/File/View.aspx` it's `a#…DownloadLinkForViewType` (`a[id$='DownloadLinkForViewType']`), with the file name in its `Download` attribute and `href="/Proxy/DownloadRedirect.ashx?LearningObjectId=…&LearningObjectInstanceId=…"`.
 - **Office files (pptx, docx, xlsx) have no download link.** The page only offers "Open in PowerPoint for the web" (a postback) plus a preview iframe. But `/Proxy/DownloadRedirect.ashx?LearningObjectId=…&LearningObjectInstanceId=…` **does** serve the file when you build it yourself; the ids are in the tool page URL. Verified with a 1.8 MB pptx and an xlsx.
 - The proxy redirects to a signed `filecache.itslearning.com` URL (valid about 10 min). The response has the right `Content-Type` and `Content-Disposition: attachment; filename=…; filename*=UTF-8''…`.
-- File types seen in SDU courses: pdf (lecture slides exported from PowerPoint; lab sheets), pptx, docx, xlsx, png/jpg (whiteboard photos, diagram solutions), zip (exercise resources/code).
-- Slide PDFs from SDU's template carry **hidden template text** on every page ("Skift baggrundsfarve. Højreklik på slidet…") and the same logo image. The extractor removes lines and images that repeat on ≥ 50% of pages.
+- File types seen in courses: pdf (lecture slides exported from PowerPoint; lab sheets), pptx, docx, xlsx, png/jpg (whiteboard photos, diagram solutions), zip (exercise resources/code).
+- Slide PDFs from a university slide template carry **hidden template text** on every page ("Skift baggrundsfarve. Højreklik på slidet…") and the same logo image. The extractor removes lines and images that repeat on ≥ 50% of pages.
 
 ### Assignments (verified 2026-11-19, Phase 3)
 
@@ -104,7 +104,7 @@ Caveats: this is **web scraping of undocumented pages**, so it may break with it
 ### Calendar (verified 2026-11-19)
 
 - `calendar/events/v1?fromDate=yyyy-MM-dd&PageIndex&PageSize` takes **no end date**. It returns every event from `fromDate` on, **sorted by start**, and pages normally (127 events from 1 Sep, over 2 pages). Fetch until an event starts after the window.
-- SDU timetable events are imported. **The room is in `EventTitle`** ("Lecture - Odense U55", "T1 - Exercises - Odense U173"), and **`ImportDescription`** holds "room + teacher names". `Description` is empty. `EventType` was always "Course" here.
+- Timetable events are imported from the school's scheduling system. **The room is in `EventTitle`** ("Lecture - Campus U55", "T1 - Exercises - Campus U173"), and **`ImportDescription`** holds "room + teacher names". `Description` is empty. `EventType` was always "Course" here.
 - Exercise classes for all groups appear (T1 and T2), not only the student's own.
 - `calendar/events/{id}/v1`: `PlanLinks` (`PlanId, PlanName, TopicName` (often null), `Url`) link the event to **lesson plans**. Their material can be found through the planner + plan-name folder mapping. `Bookings` and `ElementLinks` were empty in the samples. `HasMoreContent` can be true even with an empty description.
 - `courses/{id}/calendarevents/v1?fromDate&toDate` uses **different field names**: `Id` (not `EventId`), `CourseId` (not `LocationId`) and no `EventType`.
@@ -139,7 +139,7 @@ Caveats: this is **web scraping of undocumented pages**, so it may break with it
 ## Desktop sign-in in an embedded web view (2026-11-19)
 
 - Microsoft sign-in works inside WebKitGTK 2.52 with its default user agent; no override is needed.
-- Hosts in order: `sdu.itslearning.com` (authorize) → `login.microsoftonline.com` → `syddanskuni-onmicrosoft-com.access.mcas.ms` (SDU's Microsoft Defender for Cloud Apps session proxy) → `eu1.itslearning.com` → `sdu.itslearning.com` → script redirect to `itsl-itslearning://login?...`.
+- Hosts in order: `school.itslearning.com` (authorize) → `login.microsoftonline.com` → `<tenant>.access.mcas.ms` (the school's Microsoft Defender for Cloud Apps session proxy) → `eu1.itslearning.com` → `school.itslearning.com` → script redirect to `itsl-itslearning://login?...`.
 - The script redirect (`top.location.replace`) shows up as a normal navigation-policy decision, so cancelling it there is enough.
 
 ## Null lists (2026-11-19)

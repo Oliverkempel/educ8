@@ -61,7 +61,7 @@ public sealed class FileStorageTests : IDisposable
     [Fact]
     public void Settings_loader_layers_config_file_and_environment()
     {
-        File.WriteAllText(Path.Combine(_dir, Educ8Paths.ConfigFileName), """{ "ClientId": "from-file", "Scope": "Courses" }""");
+        File.WriteAllText(Path.Combine(_dir, Educ8Paths.ConfigFileName), """{ "BaseUrl": "https://school.itslearning.com", "ClientId": "from-file", "Scope": "Courses" }""");
         var env = new Dictionary<string, string> { [ItslearningSettingsLoader.ScopeEnvVar] = "All" };
 
         var options = ItslearningSettingsLoader.Load(_dir, k => env.GetValueOrDefault(k));
@@ -69,12 +69,20 @@ public sealed class FileStorageTests : IDisposable
         Assert.Equal("from-file", options.ClientId);
         Assert.Equal("All", options.Scope);
         Assert.Equal(ItslearningOptions.DefaultRedirectUri, options.RedirectUri);
-        Assert.Equal(new Uri(ItslearningOptions.DefaultBaseUrl), options.BaseUrl);
+        Assert.Equal(new Uri("https://school.itslearning.com"), options.BaseUrl);
     }
 
     [Fact]
     public void Missing_client_id_fails_validation() =>
-        Assert.Throws<InvalidOperationException>(() => new ItslearningOptions { DataDirectory = _dir }.Validate());
+        Assert.Throws<InvalidOperationException>(() => new ItslearningOptions { BaseUrl = new Uri("https://school.itslearning.com"), DataDirectory = _dir }.Validate());
+
+    [Fact]
+    public void Missing_site_fails_validation_with_a_hint()
+    {
+        var e = Assert.Throws<InvalidOperationException>(() => new ItslearningOptions { ClientId = "x", DataDirectory = _dir }.Validate());
+        Assert.Contains("BaseUrl", e.Message);
+        Assert.Contains(ItslearningSettingsLoader.BaseUrlEnvVar, e.Message);
+    }
 
     [Theory]
     [InlineData("Lecture 10.pdf", "Lecture 10.pdf")]

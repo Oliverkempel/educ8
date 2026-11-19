@@ -105,7 +105,7 @@ public sealed class TestServices : IDisposable
         Services.AddSingleton<TimeProvider>(Time);
         Services.AddSingleton<ITokenStore>(Store);
         Services.AddSingleton<Educ8.Itslearning.Content.IWebHandlerFactory>(new FakeWebHandlerFactory(Web));
-        Services.AddItslearning(new ItslearningOptions { ClientId = "test-client", DataDirectory = DataDir });
+        Services.AddItslearning(new ItslearningOptions { BaseUrl = new Uri("https://school.itslearning.com"), ClientId = "test-client", DataDirectory = DataDir });
         Services.ConfigureHttpClientDefaults(b => b.ConfigurePrimaryHttpMessageHandler(() => Http.CreateHandler()));
     }
 

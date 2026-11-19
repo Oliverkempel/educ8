@@ -33,8 +33,8 @@ public class HtmlToMarkdownTests
     {
         var page = WebPageParsers.Page(Fixtures.Read("page_guides_2262797.html"));
         var md = HtmlToMarkdown.Convert(page.Blocks[0].Html);
-        Assert.Contains("SDU collects and stores personal data about you in itslearning.", md);
-        Assert.Contains("](https://mitsdu.dk/en/itsl-persondata)", md);
+        Assert.Contains("University collects and stores personal data about you in itslearning.", md);
+        Assert.Contains("](https://portal.example.edu/en/itsl-persondata)", md);
         Assert.DoesNotContain("<", md.Replace("<https", ""));
         Assert.DoesNotContain("style", md);
     }
