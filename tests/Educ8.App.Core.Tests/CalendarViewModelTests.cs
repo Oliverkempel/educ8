@@ -15,7 +15,7 @@ public class CalendarViewModelTests
         {
             "/restapi/personal/calendar/events/v1" => FakeItslearning.Json($$"""
                 {"EntityArray":[{{Ev(1, "2026-11-16T07:00:00Z", "2026-11-16T15:00:00Z", "Project work", 30)}},
-                                {{Ev(2, "2026-11-18T13:00:00Z", "2026-11-18T15:00:00Z", "Lecture - Odense U150", 10)}},
+                                {{Ev(2, "2026-11-18T13:00:00Z", "2026-11-18T15:00:00Z", "Lecture - Campus U150", 10)}},
                                 {{Ev(3, "2026-11-18T08:00:00Z", "2026-11-18T10:00:00Z", "Exercises", 20)}},
                                 {{Ev(4, "2026-11-24T08:00:00Z", "2026-11-24T10:00:00Z", "Next week lecture", 10)}}],"Total":4}
                 """),
@@ -24,15 +24,15 @@ public class CalendarViewModelTests
                 AppTestHost.Course(20, "Web", "T2-1-E26", "2026-11-18T08:00:00Z"),
                 AppTestHost.Course(30, "Semester project", "T3-1-E26", "2026-11-16T08:00:00Z"))),
             "/restapi/personal/calendar/events/2/v1" => FakeItslearning.Json("""
-                {"EventUrl":"https://sdu.itslearning.com/Course/Course.aspx?CourseID=10&EventId=2","Bookings":[],"ElementLinks":[],
+                {"EventUrl":"https://school.itslearning.com/Course/Course.aspx?CourseID=10&EventId=2","Bookings":[],"ElementLinks":[],
                  "PlanLinks":[{"PlanId":501,"PlanName":"Lecture","TopicName":"11: Web"}],
-                 "EventId":2,"FromDate":"2026-11-18T13:00:00Z","ToDate":"2026-11-18T15:00:00Z","EventTitle":"Lecture - Odense U150",
-                 "Description":"<p>Bring a <b>laptop</b></p>","ImportDescription":"Odense U150 Teacher","EventType":"Course","LocationId":10,"LocationTitle":"OSDS"}
+                 "EventId":2,"FromDate":"2026-11-18T13:00:00Z","ToDate":"2026-11-18T15:00:00Z","EventTitle":"Lecture - Campus U150",
+                 "Description":"<p>Bring a <b>laptop</b></p>","ImportDescription":"Campus U150 Teacher","EventType":"Course","LocationId":10,"LocationTitle":"OSDS"}
                 """),
             "/restapi/personal/planner/v1" => FakeItslearning.Json("""{"EntityArray":[{"PlanId":501,"PlanName":"Lecture","PlanDescription":"<p>Read chapter 7</p>","TopicId":7}],"Total":1}"""),
             "/restapi/personal/courses/10/topics/v1" => FakeItslearning.Json("""{"EntityArray":[{"TopicId":7,"TopicName":"11: Web","FolderId":70}],"Total":1}"""),
             "/restapi/personal/courses/10/folders/70/resources/v1" => FakeItslearning.Json("""{"Resources":{"EntityArray":[{"ElementId":71,"ElementType":"Folder","Title":"Lecture","CourseId":10}],"Total":1}}"""),
-            "/restapi/personal/courses/10/folders/71/resources/v1" => FakeItslearning.Json("""{"Resources":{"EntityArray":[{"ElementId":72,"ElementType":"LearningToolElement","LearningToolId":5009,"Title":"slides.pdf","CourseId":10,"Url":"https://sdu.itslearning.com/main.aspx?ElementID=72"}],"Total":1}}"""),
+            "/restapi/personal/courses/10/folders/71/resources/v1" => FakeItslearning.Json("""{"Resources":{"EntityArray":[{"ElementId":72,"ElementType":"LearningToolElement","LearningToolId":5009,"Title":"slides.pdf","CourseId":10,"Url":"https://school.itslearning.com/main.aspx?ElementID=72"}],"Total":1}}"""),
             _ => new HttpResponseMessage(HttpStatusCode.NotFound),
         };
         return h;
@@ -55,7 +55,7 @@ public class CalendarViewModelTests
         Assert.True(wednesday.IsToday);
         Assert.True(vm.Days[1].IsPast);
         Assert.Equal("18 November", wednesday.DateText);
-        Assert.Equal(["Exercises", "Lecture - Odense U150"], wednesday.Events.Select(e => e.Title)); // sorted by start
+        Assert.Equal(["Exercises", "Lecture - Campus U150"], wednesday.Events.Select(e => e.Title)); // sorted by start
         var lecture = wednesday.Events[1];
         Assert.Equal("13:00–15:00", lecture.TimeText);
         Assert.Equal("Room U1 Teacher", lecture.Subtitle);
@@ -118,7 +118,7 @@ public class CalendarViewModelTests
         await file.OpenCommand.ExecuteAsync(null);
 
         Assert.Empty(h.OpenFile.Opened);
-        Assert.Equal(["https://sdu.itslearning.com/main.aspx?ElementID=72"], h.OpenUrl.Opened.Select(u => u.ToString()));
+        Assert.Equal(["https://school.itslearning.com/main.aspx?ElementID=72"], h.OpenUrl.Opened.Select(u => u.ToString()));
         Assert.Equal("Couldn't download the file (The file page has no download link.). Opened it in itslearning instead.", file.ErrorMessage);
     }
 
@@ -134,9 +134,9 @@ public class CalendarViewModelTests
         var d = vm.Details;
 
         Assert.True(d.HasEvent);
-        Assert.Equal("Lecture - Odense U150", d.Title);
+        Assert.Equal("Lecture - Campus U150", d.Title);
         Assert.Equal("Wednesday, 18 November 2026, 13:00–15:00", d.WhenText);
-        Assert.Equal("Odense U150 Teacher", d.PlaceText);
+        Assert.Equal("Campus U150 Teacher", d.PlaceText);
         Assert.Equal("Bring a laptop", d.DescriptionText);
         var plan = Assert.Single(d.Plans);
         Assert.Equal("Read chapter 7", plan.DescriptionText);
@@ -153,7 +153,7 @@ public class CalendarViewModelTests
         Assert.Null(file.ErrorMessage);
 
         d.OpenInItslearningCommand.Execute(null);
-        Assert.Equal(["https://sdu.itslearning.com/Course/Course.aspx?CourseID=10&EventId=2"], h.OpenUrl.Opened.Select(u => u.ToString()));
+        Assert.Equal(["https://school.itslearning.com/Course/Course.aspx?CourseID=10&EventId=2"], h.OpenUrl.Opened.Select(u => u.ToString()));
 
         vm.SelectedEvent = null;
         Assert.False(d.HasEvent);

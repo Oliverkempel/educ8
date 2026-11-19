@@ -1,6 +1,6 @@
 # Planner
 
-> Auto-generated from https://sdu.itslearning.com/restapi/help — do not hand-edit; regenerate instead.
+> Auto-generated from an itslearning site's /restapi/help — do not hand-edit; regenerate instead.
 
 **Overview:** Endpoint to get planner information. Secured with Oauth2, and requires OAuth2 API scope Planner.
 

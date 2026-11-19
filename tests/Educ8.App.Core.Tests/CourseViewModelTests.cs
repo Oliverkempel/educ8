@@ -6,7 +6,7 @@ namespace Educ8.App.Core.Tests;
 
 public class CourseViewModelTests
 {
-    private const string File72 = """{"ElementId":72,"ElementType":"LearningToolElement","LearningToolId":5009,"Title":"slides.pdf","CourseId":10,"Url":"https://sdu.itslearning.com/main.aspx?ElementID=72","Active":true}""";
+    private const string File72 = """{"ElementId":72,"ElementType":"LearningToolElement","LearningToolId":5009,"Title":"slides.pdf","CourseId":10,"Url":"https://school.itslearning.com/main.aspx?ElementID=72","Active":true}""";
 
     /// <summary>Course 10 with one item in each overview section and a two-level folder tree. Clock: Wed 2026-11-18 12:00 UTC.</summary>
     private static AppTestHost Host(Func<string, HttpResponseMessage?>? overrides = null)
@@ -27,17 +27,17 @@ public class CourseViewModelTests
                 {"id":5,"title":"Lecture 10","elements":[{"id":72,"title":"slides.pdf","url":"/LearningToolElement/ViewLearningToolElement.aspx?LearningToolElementId=72","type":"LearningToolElement","learningToolId":5009,"isResource":true,"isActive":true,"isFolder":false}]}
                 """),
             "/restapi/personal/courses/10/tasks/v1" => FakeItslearning.Json("""
-                {"EntityArray":[{"TaskId":1,"ElementId":80,"ElementType":"LearningToolElement","LearningToolId":5006,"Title":"Hand-in 3","Deadline":"2026-11-20T22:59:00Z","Url":"https://sdu.itslearning.com/main.aspx?ElementID=80"}],"Total":1}
+                {"EntityArray":[{"TaskId":1,"ElementId":80,"ElementType":"LearningToolElement","LearningToolId":5006,"Title":"Hand-in 3","Deadline":"2026-11-20T22:59:00Z","Url":"https://school.itslearning.com/main.aspx?ElementID=80"}],"Total":1}
                 """),
             "/restapi/personal/courses/10/stream/v1" => FakeItslearning.Json("""
-                {"EntityArray":[{"NotificationId":1,"Text":"Ann added <b>slides.pdf</b>","PublishedDate":"2026-11-17T10:00:00Z","PublishedBy":{"FullName":"Ann Teacher"},"ElementId":72,"ElementType":"LearningToolElement","LearningToolId":5009,"Url":"https://sdu.itslearning.com/main.aspx?ElementID=72"}],"Total":1}
+                {"EntityArray":[{"NotificationId":1,"Text":"Ann added <b>slides.pdf</b>","PublishedDate":"2026-11-17T10:00:00Z","PublishedBy":{"FullName":"Ann Teacher"},"ElementId":72,"ElementType":"LearningToolElement","LearningToolId":5009,"Url":"https://school.itslearning.com/main.aspx?ElementID=72"}],"Total":1}
                 """),
             "/restapi/personal/courses/10/resources/v1" => FakeItslearning.Json("""
                 {"Resources":{"EntityArray":[{"ElementId":300,"ElementType":"Folder","LearningToolId":0,"Title":"Week 1","CourseId":10,"Active":true},FILE72,
                   {"ElementId":301,"ElementType":"Folder","LearningToolId":0,"Title":"Hidden","CourseId":10,"Active":false}],"Total":3}}
                 """.Replace("FILE72", File72)),
             "/restapi/personal/courses/10/folders/300/resources/v1" => FakeItslearning.Json("""
-                {"Resources":{"EntityArray":[{"ElementId":400,"ElementType":"LearningToolElement","LearningToolId":5,"Title":"Reading guide","CourseId":10,"Url":"https://sdu.itslearning.com/main.aspx?ElementID=400","Active":true}],"Total":1}}
+                {"Resources":{"EntityArray":[{"ElementId":400,"ElementType":"LearningToolElement","LearningToolId":5,"Title":"Reading guide","CourseId":10,"Url":"https://school.itslearning.com/main.aspx?ElementID=400","Active":true}],"Total":1}}
                 """),
             "/restapi/personal/course/10/plans/topics/v1" => FakeItslearning.Json("""[{"id":7,"name":"Course info","planCount":1},{"id":8,"name":"Unused","planCount":0}]"""),
             "/restapi/personal/course/10/plans/topics/7/all/v1" => FakeItslearning.Json("""
@@ -75,7 +75,7 @@ public class CourseViewModelTests
 
         Assert.Equal((10, "Statistics, (E26)", "T700075101-1-E26"), (course.CourseId, course.Title, course.Subtitle));
         course.OpenInItslearningCommand.Execute(null);
-        Assert.Equal("https://sdu.itslearning.com/main.aspx?CourseID=10", h.OpenUrl.Opened.Single().ToString());
+        Assert.Equal("https://school.itslearning.com/main.aspx?CourseID=10", h.OpenUrl.Opened.Single().ToString());
     }
 
     [Fact]
@@ -92,7 +92,7 @@ public class CourseViewModelTests
 
         var plan = Assert.Single(course.Plans.Items);
         Assert.Equal(("Lecture 10", "Tue 17 Nov, 13:00–15:00", "Regression, part 2"), (plan.Name, plan.WhenText, plan.DescriptionText));
-        Assert.Equal("https://sdu.itslearning.com/LearningToolElement/ViewLearningToolElement.aspx?LearningToolElementId=72",
+        Assert.Equal("https://school.itslearning.com/LearningToolElement/ViewLearningToolElement.aspx?LearningToolElementId=72",
             Assert.Single(plan.Material).Url?.ToString());
 
         var task = Assert.Single(course.Tasks.Items);

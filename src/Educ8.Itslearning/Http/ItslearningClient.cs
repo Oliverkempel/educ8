@@ -86,7 +86,7 @@ public sealed class ItslearningClient(HttpClient http)
         ToListAsync(PageAllAsync((i, c) => GetAsync<EntityList<CoursePlan>>(
             $"restapi/personal/course/{courseId}/plans/topics/{topicId}/all/v1?PageIndex={i}&PageSize={MaxPageSize}&ChildId=0", c), ct), ct);
 
-    /// <summary>The site root (e.g. <c>https://sdu.itslearning.com/</c>), for turning site-relative links absolute.</summary>
+    /// <summary>The site root (e.g. <c>https://yourschool.itslearning.com/</c>), for turning site-relative links absolute.</summary>
     public Uri? BaseAddress => http.BaseAddress;
 
     /// <summary>The user's tasks across all courses. <paramref name="status"/>: "Active" (default) or "Completed".</summary>

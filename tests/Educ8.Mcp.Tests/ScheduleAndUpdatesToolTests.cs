@@ -24,19 +24,19 @@ public sealed class ScheduleAndUpdatesToolTests : IAsyncLifetime
         _t.Http.Respond = (req, _) => req.RequestUri!.AbsolutePath switch
         {
             "/restapi/personal/calendar/events/v1" => FakeItslearning.Json($$"""
-                {"EntityArray":[{{Ev(1, "2026-11-18T13:00:00Z", "2026-11-18T15:00:00Z", "Lecture - Odense U150", 10)}},
-                                {{Ev(2, "2026-11-20T08:00:00Z", "2026-11-20T12:00:00Z", "Lessons - Odense U170", 11)}},
+                {"EntityArray":[{{Ev(1, "2026-11-18T13:00:00Z", "2026-11-18T15:00:00Z", "Lecture - Campus U150", 10)}},
+                                {{Ev(2, "2026-11-20T08:00:00Z", "2026-11-20T12:00:00Z", "Lessons - Campus U170", 11)}},
                                 {{Ev(3, "2026-12-30T08:00:00Z", "2026-12-30T10:00:00Z", "Far away", 10)}}],"Total":3}
                 """),
             "/restapi/personal/courses/10/v1" => FakeItslearning.Json("""{"CourseId":10,"Title":"OSDS"}"""),
             "/restapi/personal/courses/10/calendarevents/v1" => FakeItslearning.Json("""
-                {"EntityArray":[{"Id":1,"FromDate":"2026-11-18T13:00:00Z","ToDate":"2026-11-18T15:00:00Z","EventTitle":"Lecture - Odense U150","ImportDescription":"Odense U150","CourseId":10,"LocationTitle":"OSDS"}],"Total":1}
+                {"EntityArray":[{"Id":1,"FromDate":"2026-11-18T13:00:00Z","ToDate":"2026-11-18T15:00:00Z","EventTitle":"Lecture - Campus U150","ImportDescription":"Campus U150","CourseId":10,"LocationTitle":"OSDS"}],"Total":1}
                 """),
             "/restapi/personal/calendar/events/1/v1" => FakeItslearning.Json("""
-                {"EventUrl":"https://sdu.itslearning.com/Course/Course.aspx?CourseID=10&EventId=1","HasMoreContent":false,"Bookings":[],
+                {"EventUrl":"https://school.itslearning.com/Course/Course.aspx?CourseID=10&EventId=1","HasMoreContent":false,"Bookings":[],
                  "ElementLinks":[{"ElementId":900,"ElementType":"LearningToolElement","LearningToolId":5009,"Title":"handout.pdf"}],
-                 "PlanLinks":[{"PlanId":501,"PlanName":"Lecture","TopicName":"11: Web","Url":"https://sdu.itslearning.com/plans/courses/10/plan/501"}],
-                 "EventId":1,"FromDate":"2026-11-18T13:00:00Z","ToDate":"2026-11-18T15:00:00Z","EventTitle":"Lecture - Odense U150","ImportDescription":"Odense U150 Teacher","EventType":"Course","LocationId":10,"LocationTitle":"OSDS"}
+                 "PlanLinks":[{"PlanId":501,"PlanName":"Lecture","TopicName":"11: Web","Url":"https://school.itslearning.com/plans/courses/10/plan/501"}],
+                 "EventId":1,"FromDate":"2026-11-18T13:00:00Z","ToDate":"2026-11-18T15:00:00Z","EventTitle":"Lecture - Campus U150","ImportDescription":"Campus U150 Teacher","EventType":"Course","LocationId":10,"LocationTitle":"OSDS"}
                 """),
             "/restapi/personal/planner/v1" => FakeItslearning.Json("""{"EntityArray":[{"PlanId":501,"PlanName":"Lecture","PlanDescription":"<p>Read <b>chapter 7</b></p>","Start":"2026-11-18T13:00:00Z","Stop":"2026-11-18T15:00:00Z","TopicId":7}],"Total":1}"""),
             "/restapi/personal/courses/10/topics/v1" => FakeItslearning.Json("""{"EntityArray":[{"TopicId":7,"TopicName":"11: Web","FolderId":70}],"Total":1}"""),
@@ -56,8 +56,8 @@ public sealed class ScheduleAndUpdatesToolTests : IAsyncLifetime
                 """),
             "/restapi/personal/notifications/v2" => FakeItslearning.Json("""
                 {"EntityArray":[
-                  {"NotificationId":21,"Text":"Assessment is available for MVP","PublishedDate":"2026-11-17T21:53:00Z","Type":"Assessment","ContentUrl":"https://sdu.itslearning.com/LearningToolElement/ViewLearningToolElement.aspx?LearningToolElementId=2363975","IsRead":false},
-                  {"NotificationId":22,"Text":"New announcement available in OSDS","PublishedDate":"2026-11-17T11:41:30Z","Type":"Unknown","ContentUrl":"https://sdu.itslearning.com/Course/Course.aspx?CourseID=10","IsRead":true}
+                  {"NotificationId":21,"Text":"Assessment is available for MVP","PublishedDate":"2026-11-17T21:53:00Z","Type":"Assessment","ContentUrl":"https://school.itslearning.com/LearningToolElement/ViewLearningToolElement.aspx?LearningToolElementId=2363975","IsRead":false},
+                  {"NotificationId":22,"Text":"New announcement available in OSDS","PublishedDate":"2026-11-17T11:41:30Z","Type":"Unknown","ContentUrl":"https://school.itslearning.com/Course/Course.aspx?CourseID=10","IsRead":true}
                 ],"Total":2}
                 """),
             "/restapi/personal/courses/11/v1" => FakeItslearning.Json("""{"CourseId":11,"Title":"Web"}"""),
@@ -100,7 +100,7 @@ public sealed class ScheduleAndUpdatesToolTests : IAsyncLifetime
 
         Assert.False(isError, text);
         Assert.Contains("## Schedule Wed 2026-11-18 – Tue 2026-11-24", text);
-        Assert.Contains("### Wed 2026-11-18\n\n- 13:00–15:00 · **Lecture - Odense U150** · Course 10 (course 10) · Room U1 Teacher · event 1", text);
+        Assert.Contains("### Wed 2026-11-18\n\n- 13:00–15:00 · **Lecture - Campus U150** · Course 10 (course 10) · Room U1 Teacher · event 1", text);
         Assert.Contains("### Fri 2026-11-20", text);
         Assert.DoesNotContain("Far away", text);
     }
@@ -110,7 +110,7 @@ public sealed class ScheduleAndUpdatesToolTests : IAsyncLifetime
     {
         var (text, _) = await Call("get_schedule", new() { ["courseId"] = 10, ["from"] = "2026-11-18", ["days"] = 1 });
         Assert.Contains("## Schedule for OSDS, Wed 2026-11-18 – Wed 2026-11-18", text);
-        Assert.Contains("- 13:00–15:00 · **Lecture - Odense U150** · Odense U150 · event 1", text);
+        Assert.Contains("- 13:00–15:00 · **Lecture - Campus U150** · Campus U150 · event 1", text);
 
         var (bad, isError) = await Call("get_schedule", new() { ["from"] = "next week" });
         Assert.True(isError);
@@ -124,8 +124,8 @@ public sealed class ScheduleAndUpdatesToolTests : IAsyncLifetime
 
         Assert.False(isError, text);
         Assert.Contains("**When:** Wed 2026-11-18 13:00–15:00 (UTC)", text);
-        Assert.Contains("**Timetable info:** Odense U150 Teacher", text);
-        Assert.Contains("- **Lecture** (topic: 11: Web) · https://sdu.itslearning.com/plans/courses/10/plan/501\n  Read **chapter 7**\n  - File: slides.pdf · element 72 · read_file", text);
+        Assert.Contains("**Timetable info:** Campus U150 Teacher", text);
+        Assert.Contains("- **Lecture** (topic: 11: Web) · https://school.itslearning.com/plans/courses/10/plan/501\n  Read **chapter 7**\n  - File: slides.pdf · element 72 · read_file", text);
         Assert.Contains("## Linked material\n\n- File: handout.pdf · element 900 · read_file", text);
     }
 

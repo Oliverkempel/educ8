@@ -1,6 +1,6 @@
 # Sites
 
-> Auto-generated from https://sdu.itslearning.com/restapi/help — do not hand-edit; regenerate instead.
+> Auto-generated from an itslearning site's /restapi/help — do not hand-edit; regenerate instead.
 
 **Overview:** Endpoint to get information about all active itslearning sites.
 

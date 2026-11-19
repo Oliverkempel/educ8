@@ -288,7 +288,7 @@ record Config(string BaseUrl, string? ClientId, string? RedirectUri, string Scop
         var f = File.Exists(path) ? JsonNode.Parse(File.ReadAllText(path))!.AsObject() : new JsonObject();
         string? V(string env, string key) => Environment.GetEnvironmentVariable(env) is { Length: > 0 } e ? e : f[key]?.GetValue<string>();
         return new(
-            (V("ITSLEARNING_BASE_URL", "BaseUrl") ?? "https://sdu.itslearning.com").TrimEnd('/'),
+            (V("ITSLEARNING_BASE_URL", "BaseUrl") ?? throw new InvalidOperationException("Set ITSLEARNING_BASE_URL or \"BaseUrl\" in spikes/.secrets/config.json.")).TrimEnd('/'),
             V("ITSLEARNING_CLIENT_ID", "ClientId"),
             V("ITSLEARNING_REDIRECT_URI", "RedirectUri"),
             V("ITSLEARNING_SCOPE", "Scope") ?? "All",

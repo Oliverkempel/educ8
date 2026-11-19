@@ -20,8 +20,8 @@ public class CoursesViewModelTests
             teachers: string.Join(',', AppTestHost.Teacher("Ann", "A"), AppTestHost.Teacher("Bo", "B"), AppTestHost.Teacher("Cy", "C"), AppTestHost.Teacher("Di", "D"))),
         AppTestHost.Course(2, "Operating systems, (E26)", "T510046101-1-E26", "2026-11-17T08:00:00Z", teachers: AppTestHost.Teacher("Leo", "L")),
         AppTestHost.Course(3, "Data Management, (F26)", "T510051101-1-F26", "2026-05-04T08:00:00Z"),
-        AppTestHost.Course(4, "Software Uddannelsen Odense", "IA-TEK-00000011", "2026-11-13T08:00:00Z"),
-        AppTestHost.Course(5, "SDU Bibliotek", "L000001M01-M-F21x", "2025-01-02T08:00:00Z"));
+        AppTestHost.Course(4, "Software Programme", "IA-TEK-00000011", "2026-11-13T08:00:00Z"),
+        AppTestHost.Course(5, "University Library", "L000001M01-M-F21x", "2025-01-02T08:00:00Z"));
 
     [Fact]
     public async Task Current_semester_by_default_sorted_by_activity()
@@ -76,7 +76,7 @@ public class CoursesViewModelTests
         Assert.Equal("", vm.Courses[2].SemesterText);
 
         web.OpenInItslearningCommand.Execute(null);
-        Assert.Equal("https://sdu.itslearning.com/main.aspx?CourseID=1", h.OpenUrl.Opened.Single().ToString());
+        Assert.Equal("https://school.itslearning.com/main.aspx?CourseID=1", h.OpenUrl.Opened.Single().ToString());
     }
 
     [Fact]

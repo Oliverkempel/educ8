@@ -35,7 +35,7 @@ public class CalendarAndUpdatesTests
         using var t = new TestServices();
         t.SignedIn();
         t.Http.Respond = (_, _) => FakeItslearning.Json("""
-            {"EntityArray":[{"Id":1284319,"FromDate":"2026-11-19T11:00:00Z","ToDate":"2026-11-19T13:00:00Z","EventTitle":"Lecture - Odense U150","Description":"","ImportDescription":"Odense U150 Teacher","CourseId":50352,"CourseGroupId":0,"LocationTitle":"OSDS"}],"Total":1}
+            {"EntityArray":[{"Id":1284319,"FromDate":"2026-11-19T11:00:00Z","ToDate":"2026-11-19T13:00:00Z","EventTitle":"Lecture - Campus U150","Description":"","ImportDescription":"Campus U150 Teacher","CourseId":50352,"CourseGroupId":0,"LocationTitle":"OSDS"}],"Total":1}
             """);
         using var sp = t.Build();
 
@@ -69,8 +69,8 @@ public class CalendarAndUpdatesTests
     }
 
     [Theory]
-    [InlineData("https://sdu.itslearning.com/LearningToolElement/ViewLearningToolElement.aspx?LearningToolElementId=2363975", 2363975)]
-    [InlineData("https://sdu.itslearning.com/Course/Course.aspx?CourseID=50352", null)]
+    [InlineData("https://school.itslearning.com/LearningToolElement/ViewLearningToolElement.aspx?LearningToolElementId=2363975", 2363975)]
+    [InlineData("https://school.itslearning.com/Course/Course.aspx?CourseID=50352", null)]
     [InlineData(null, null)]
     public void Notification_element_id_from_content_url(string? url, int? expected) =>
         Assert.Equal(expected, new Notification { ContentUrl = url }.ElementId);
@@ -81,9 +81,9 @@ public class CalendarAndUpdatesTests
         using var t = new TestServices();
         t.SignedIn();
         t.Http.Respond = (_, _) => FakeItslearning.Json("""
-            {"EventUrl":"https://sdu.itslearning.com/Course/Course.aspx?CourseID=50103&EventId=7","HasMoreContent":true,"Bookings":[],"ElementLinks":[],
-             "PlanLinks":[{"PlanId":420060,"PlanName":"Lecture 10","TopicName":null,"Url":"https://sdu.itslearning.com/plans/courses/50103/plan/420060"}],
-             "EventId":7,"FromDate":"2026-11-17T13:00:00Z","ToDate":"2026-11-17T15:00:00Z","EventTitle":"Lecture - Odense U55","EventType":"Course","LocationId":50103}
+            {"EventUrl":"https://school.itslearning.com/Course/Course.aspx?CourseID=50103&EventId=7","HasMoreContent":true,"Bookings":[],"ElementLinks":[],
+             "PlanLinks":[{"PlanId":420060,"PlanName":"Lecture 10","TopicName":null,"Url":"https://school.itslearning.com/plans/courses/50103/plan/420060"}],
+             "EventId":7,"FromDate":"2026-11-17T13:00:00Z","ToDate":"2026-11-17T15:00:00Z","EventTitle":"Lecture - Campus U55","EventType":"Course","LocationId":50103}
             """);
         using var sp = t.Build();
 

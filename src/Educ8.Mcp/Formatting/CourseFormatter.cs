@@ -6,7 +6,7 @@ namespace Educ8.Mcp.Formatting;
 
 internal static partial class CourseFormatter
 {
-    /// <summary>Semester from an SDU-style course code suffix, e.g. "T510046101-1-E26" → "E26" (E = autumn, F = spring).</summary>
+    /// <summary>Semester from a course code suffix, e.g. "T510046101-1-E26" → "E26" (E = autumn, F = spring).</summary>
     public static string? Semester(string? courseCode) => CourseCodes.Semester(courseCode);
 
     /// <summary>Courses sorted by most recent activity, optionally filtered by a case-insensitive text match.</summary>

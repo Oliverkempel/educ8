@@ -58,6 +58,7 @@ jobs:
     needs: version
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         rid: [linux-x64, linux-arm64, win-x64, osx-arm64, osx-x64]
     env:
@@ -92,6 +93,7 @@ jobs:
     needs: version
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         rid: [linux-x64, linux-arm64]
     env:
@@ -119,13 +121,13 @@ jobs:
           path: dist/*
 
   # The same app as a Flatpak bundle on the GNOME runtime (packages the desktop job's publish; see the manifest).
+  # Runs on the runner itself, not in Flathub's builder container: that image has no package manager, so Docker/QEMU
+  # (needed for aarch64) can't be added there. The runner has Docker, and flatpak-builder comes from apt.
   flatpak:
     needs: [version, desktop]
     runs-on: ubuntu-latest
-    container:
-      image: ghcr.io/flathub-infra/flatpak-github-actions:gnome-51
-      options: --privileged
     strategy:
+      fail-fast: false
       matrix:
         include:
           - arch: x86_64
@@ -134,6 +136,7 @@ jobs:
             rid: linux-arm64
     env:
       VERSION: ${{ needs.version.outputs.version }}
+      ARCH: ${{ matrix.arch }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
@@ -145,21 +148,29 @@ jobs:
           tar -xzf "dl/educ8-$VERSION-${{ matrix.rid }}.tar.gz"
           mkdir -p packaging/flatpak/stage
           cp -R "educ8-$VERSION-${{ matrix.rid }}/." packaging/flatpak/stage/
-      - name: Docker for QEMU (aarch64)
-        if: matrix.arch == 'aarch64'
-        run: dnf -y install docker
       - name: QEMU (aarch64)
         if: matrix.arch == 'aarch64'
         uses: docker/setup-qemu-action@v3
         with:
           platforms: arm64
-      - uses: flatpak/flatpak-github-actions/flatpak-builder@v6
+      - name: Flatpak tooling and GNOME runtime
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q flatpak flatpak-builder
+          # Ubuntu restricts unprivileged user namespaces, which bubblewrap (used by flatpak-builder) needs.
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0 || true
+          flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+          flatpak install --user -y --noninteractive --arch="$ARCH" flathub org.gnome.Platform//51 org.gnome.Sdk//51
+      - name: Build the Flatpak bundle
+        working-directory: packaging/flatpak
+        run: |
+          flatpak-builder --user --force-clean --disable-rofiles-fuse --arch="$ARCH" --repo=repo build io.github.educ8.Educ8.yml
+          mkdir -p "$GITHUB_WORKSPACE/dist"
+          flatpak build-bundle --arch="$ARCH" repo "$GITHUB_WORKSPACE/dist/educ8-$VERSION-$ARCH.flatpak" io.github.educ8.Educ8
+      - uses: actions/upload-artifact@v4
         with:
-          manifest-path: packaging/flatpak/io.github.educ8.Educ8.yml
-          bundle: educ8-${{ env.VERSION }}-${{ matrix.arch }}.flatpak
-          arch: ${{ matrix.arch }}
-          cache: false
-          upload-artifact: true
+          name: flatpak-${{ matrix.arch }}
+          path: dist/*
 
   release:
     needs: [version, mcp, desktop, flatpak]

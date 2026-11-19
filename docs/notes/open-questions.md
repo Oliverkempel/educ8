@@ -10,9 +10,9 @@ Answered by Phase 0 (2026-11-18): the redirect URI is `itsl-itslearning://login`
 
 1. ~~How does the MCP server capture the code?~~ Phase 1: an OS URL-scheme handler (Linux/Windows) plus a paste fallback; the desktop app will use its WebView. Still to check: whether browsers actually prompt for and launch the registered `itsl-itslearning` handler from `top.location.replace`, and how easy copying the link is in practice (Chrome shows nothing; the user needs the handler).
 1b. ~~Desktop UI framework~~. Decided 2026-11-19: native per platform (GTK 4/libadwaita, AppKit, WinUI 3); see [../design/desktop-app-plan.md](../design/desktop-app-plan.md).
-1c. ~~Does Microsoft's sign-in work inside an embedded WebKitGTK view?~~ Yes (2026-11-19, WebKitGTK 2.52, default user agent). The flow goes sdu.itslearning.com → login.microsoftonline.com → SDU's Defender for Cloud Apps proxy (`*.access.mcas.ms`) → eu1.itslearning.com → sdu.itslearning.com → `itsl-itslearning://login`, which the navigation policy catches.
+1c. ~~Does Microsoft's sign-in work inside an embedded WebKitGTK view?~~ Yes (2026-11-19, WebKitGTK 2.52, default user agent). The flow goes school.itslearning.com → login.microsoftonline.com → the school's Defender for Cloud Apps proxy (`*.access.mcas.ms`) → eu1.itslearning.com → school.itslearning.com → `itsl-itslearning://login`, which the navigation policy catches.
 2. **Refresh-token lifetime**: how long the user can stay logged in without signing in again. Observe over days.
-3. **Can a `prompt`/`login_hint`-style parameter preselect the SDU Office 365 provider?** It would skip the provider picker. Nice to have.
+3. **Can a `prompt`/`login_hint`-style parameter preselect the school's Office 365 provider?** It would skip the provider picker. Nice to have.
 4. ~~Can one SSO web session be reused?~~ Yes (2026-11-18). Lifetime is still unknown; expiry is detected and handled with a new SSO.
 4b. Page block kinds other than `text` (files, images, rss, poll) haven't been seen live yet. They're passed through as HTML with a `[kind block]` note. Check them when a course has them.
 
@@ -46,7 +46,7 @@ Answered by Phase 0 (2026-11-18): the redirect URI is `itsl-itslearning://login`
 6. Do numeric enum values work in query strings, or only names?
 7. Values for unresolved enums (`ContentAreaFilterType`, `TaskDeadlineFilter`, `SupervisorType`, `ResourceType`, `HierarchyRole`, `LightBulletinTimePeriod`). `courses/v2?filter=` defaults to `All`.
 8. Rate limits: none documented.
-9. Is the API identical on other itslearning sites? Assume yes (same product), with `BaseUrl` from `restapi/sites/...`. This would let the MCP server support any site, not just SDU.
+9. Is the API identical on other itslearning sites? Assume yes (same product), with `BaseUrl` from `restapi/sites/...`. This would let the MCP server support any site, not just the school.
 10. Which endpoints return HTML in text fields, and how much do they strip?
 
 ## Tests and CI

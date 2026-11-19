@@ -14,7 +14,7 @@ internal static class Cli
     {
         var login = sp.GetRequiredService<LoginService>();
         var pending = login.Begin();
-        Console.WriteLine("Sign in to itslearning (choose \"SDU Office 365\") at:");
+        Console.WriteLine("Sign in to itslearning (with your school's login) at:");
         Console.WriteLine();
         Console.WriteLine(pending.AuthorizeUrl);
         Console.WriteLine();
@@ -60,7 +60,7 @@ internal static class Cli
         try
         {
             var me = await sp.GetRequiredService<ItslearningClient>().GetCurrentPersonAsync();
-            Console.WriteLine($"Logged in to {options.BaseUrl.Host} as {me.DisplayName}.");
+            Console.WriteLine($"Logged in to {options.Site.Host} as {me.DisplayName}.");
             return 0;
         }
         catch (NotAuthenticatedException e)

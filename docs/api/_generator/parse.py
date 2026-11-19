@@ -50,7 +50,7 @@ for m in re.finditer(r'<h3 id="([^"]+)">.*?</h3>(.*?)(?=<h3 id=|\Z)', idx, re.S)
 os.makedirs(f'{out}/endpoints', exist_ok=True)
 summary = []
 for name, ov, links in ctrls:
-    md = f'# {name}\n\n> Auto-generated from https://sdu.itslearning.com/restapi/help — do not hand-edit; regenerate instead.\n\n'
+    md = f'# {name}\n\n> Auto-generated from an itslearning site's /restapi/help — do not hand-edit; regenerate instead.\n\n'
     ov = re.sub(r'^Overview:\s*', '', ov)
     if ov: md += f'**Overview:** {ov}\n\n'
     md += '## Endpoints\n\n'

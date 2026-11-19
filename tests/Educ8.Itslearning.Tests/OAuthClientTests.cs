@@ -13,7 +13,7 @@ public class OAuthClientTests
         using var sp = t.Build();
         var url = sp.GetRequiredService<OAuthClient>().BuildAuthorizeUrl("0123456789abcdef");
 
-        Assert.StartsWith("https://sdu.itslearning.com/oauth2/authorize.aspx?", url.ToString());
+        Assert.StartsWith("https://school.itslearning.com/oauth2/authorize.aspx?", url.ToString());
         Assert.Contains("client_id=test-client", url.Query);
         Assert.Contains("state=0123456789abcdef", url.Query);
         Assert.Contains("response_type=code", url.Query);

@@ -20,7 +20,7 @@ public sealed class AssignmentToolTests : IAsyncLifetime
     private bool _webViewBroken;
 
     private static string Element(int id, string title) =>
-        $$"""{"CourseTitle":"Data Management, (F26)","ElementId":{{id}},"ElementType":"LearningToolElement","LearningToolId":5006,"Title":"{{title}}","CourseId":46355,"Url":"https://sdu.itslearning.com/main.aspx?ElementID={{id}}","Active":true,"Path":" / DM / Relational Databases"}""";
+        $$"""{"CourseTitle":"Data Management, (F26)","ElementId":{{id}},"ElementType":"LearningToolElement","LearningToolId":5006,"Title":"{{title}}","CourseId":46355,"Url":"https://school.itslearning.com/main.aspx?ElementID={{id}}","Active":true,"Path":" / DM / Relational Databases"}""";
 
     public async Task InitializeAsync()
     {
@@ -35,7 +35,7 @@ public sealed class AssignmentToolTests : IAsyncLifetime
                     return FakeItslearning.Json($$"""{"PersonId":{{Me}},"FirstName":"Test","LastName":"Student"}""");
                 case "/restapi/personal/sso/url/v1":
                     lastElement = int.Parse(Uri.UnescapeDataString(req.RequestUri.Query).Split("LearningToolElementId=")[1].Split('&')[0]);
-                    return FakeItslearning.Json("""{"Url":"https://sdu.itslearning.com/sso-login"}""");
+                    return FakeItslearning.Json("""{"Url":"https://school.itslearning.com/sso-login"}""");
                 case $"/restapi/personal/courses/resources/3001/v1": return FakeItslearning.Json(Element(Graded, "Point-Giving Activity 1"));
                 case $"/restapi/personal/courses/resources/3002/v1": return FakeItslearning.Json(Element(Open, "Task 3 - Reflection"));
                 case "/restapi/personal/assignments/3001/v1":
@@ -73,7 +73,7 @@ public sealed class AssignmentToolTests : IAsyncLifetime
             var u = req.RequestUri!;
             if (_webViewBroken) return new HttpResponseMessage(HttpStatusCode.GatewayTimeout);
             if (u.AbsolutePath == "/sso-login" || u.AbsolutePath.Contains("ViewLearningToolElement"))
-                return Fixtures.Html(Fixtures.Read("view_page_2266446.html"), "https://sdu.itslearning.com/LearningToolElement/ViewLearningToolElement.aspx");
+                return Fixtures.Html(Fixtures.Read("view_page_2266446.html"), "https://school.itslearning.com/LearningToolElement/ViewLearningToolElement.aspx");
             if (u.Host == "platform.itslearning.com")
                 return Fixtures.Html(Fixtures.Read(lastElement == Graded ? "assignment_graded.html" : "assignment_unsubmitted.html"), "https://assignment.itslearning.com/view.aspx");
             return new HttpResponseMessage(HttpStatusCode.NotFound);

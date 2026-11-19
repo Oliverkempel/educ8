@@ -1,6 +1,6 @@
 # ChildrenCalendar
 
-> Auto-generated from https://sdu.itslearning.com/restapi/help — do not hand-edit; regenerate instead.
+> Auto-generated from an itslearning site's /restapi/help — do not hand-edit; regenerate instead.
 
 **Overview:** The controller is used to get information about children events. Secured with Oauth2, and requires OAuth2 API scope Person.
 

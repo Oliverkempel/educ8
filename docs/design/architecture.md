@@ -104,7 +104,7 @@ Sources, later ones overriding earlier: built-in defaults → `<data dir>/config
 
 | Setting | Env var | Default |
 |---|---|---|
-| BaseUrl | `ITSLEARNING_BASE_URL` | `https://sdu.itslearning.com` |
+| BaseUrl | `ITSLEARNING_BASE_URL` | `https://school.itslearning.com` |
 | ClientId | `ITSLEARNING_CLIENT_ID` | **required** (never hard-coded) |
 | RedirectUri | `ITSLEARNING_REDIRECT_URI` | `itsl-itslearning://login` |
 | Scope | `ITSLEARNING_SCOPE` | `All` |

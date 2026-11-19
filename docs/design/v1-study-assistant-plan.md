@@ -74,7 +74,7 @@ The SSO web chain is scraping of undocumented pages. Keep it behind one interfac
 
 ### Phase 0 — Live spikes ✅ done 2026-11-18
 Result: OAuth works. All core REST endpoints work. Files, Pages and Links are readable through the SSO web chain. Assignments and own answers are readable through REST. See [../api/live-findings.md](../api/live-findings.md). Original plan kept below for reference.
-Small throwaway console or `.http` experiments against SDU with your client ID. Record findings in `docs/api/README.md`.
+Small throwaway console or `.http` experiments against a real itslearning site with your client ID. Record findings in `docs/api/README.md`.
 1. **OAuth end to end**: authorize → Microsoft login → code → token → refresh. Settles the open questions on redirect URI, client secret and scopes.
 2. Call the core endpoints on one real course: `courses/v4`, resources, topics, planner, a Page, an assignment, own answer. Compare real JSON with the docs, especially enum values and HTML in fields.
 3. **File/Note content gap.** This is the main risk, because lecture slides and PDFs are usually `FolderFile` elements. Try in order:
@@ -84,7 +84,7 @@ Small throwaway console or `.http` experiments against SDU with your client ID. 
    If nothing works, v1 lists such files with an "open in browser" link, and only assignment and Page files are readable.
 
 ### Phase 1 — Skeleton + auth ✅ done 2026-11-18
-Solution layout from [architecture.md](architecture.md) (desktop-ready); stdio host + CLI (`login`, `status`, `logout`, `register-url-handler`, `handle-url`); configuration (defaults → `config.json` → env); OAuth, `TokenManager` with cross-process refresh lock, file token store; `ItslearningClient` with paging, 401 → refresh + retry, and error mapping. Tools: `auth_status`, `login`, `login_complete`, `list_my_courses`. 44 tests, including an end-to-end MCP protocol test. Verified live against SDU with the real stdio server (login → courses). Not yet tried in Claude Code/Desktop, and the URL-scheme handler hasn't been registered on a real desktop.
+Solution layout from [architecture.md](architecture.md) (desktop-ready); stdio host + CLI (`login`, `status`, `logout`, `register-url-handler`, `handle-url`); configuration (defaults → `config.json` → env); OAuth, `TokenManager` with cross-process refresh lock, file token store; `ItslearningClient` with paging, 401 → refresh + retry, and error mapping. Tools: `auth_status`, `login`, `login_complete`, `list_my_courses`. 44 tests, including an end-to-end MCP protocol test. Verified live against the school with the real stdio server (login → courses). Not yet tried in Claude Code/Desktop, and the URL-scheme handler hasn't been registered on a real desktop.
 
 ### Phase 2 — Understanding the course ✅ done 2026-11-18
 `get_course_overview` (topics with folder ids, lesson plans from 1 week back to N weeks ahead, open tasks, 5 latest announcements, top-level material; a section that fails shows a note instead of failing the whole call), `browse_course_materials`, `search_course_materials` (titles only), and `read_material`: Page → Markdown through the SSO web chain, Link → target URL, Folder → listing, everything else → summary + itslearning link. `LearningToolContentReader` (core) keeps one web session per process and re-SSOs when it expires. Our own HTML→Markdown converter on AngleSharp. Parsers are tested against real pages saved under `tests/Educ8.Itslearning.Tests/Fixtures`, scrubbed of personal data. 86 tests. Verified live on two courses.

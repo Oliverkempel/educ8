@@ -1,6 +1,6 @@
 # Desktop app plan
 
-Status: **D0 (shared core) done 2026-11-19. D1 (Linux app) done 2026-11-19**: sign-in through the embedded WebKitGTK view, courses and calendar all checked live against SDU. Next is D2 (Windows). Progress per platform: [desktop-parity.md](desktop-parity.md).
+Status: **D0 (shared core) done 2026-11-19. D1 (Linux app) done 2026-11-19**: sign-in through the embedded WebKitGTK view, courses and calendar all checked live against a real itslearning site. Next is D2 (Windows). Progress per platform: [desktop-parity.md](desktop-parity.md).
 
 ### D1 result
 - `src/Educ8.App.Gtk` (assembly `educ8`, app id `io.github.educ8.Educ8`), GirCore.Adw-1 + GirCore.WebKit-6.0 0.8.1. It is in `Educ8.slnx`. Run it with `dotnet run --project src/Educ8.App.Gtk`. It needs the GTK 4, libadwaita 1 and WebKitGTK 6.0 runtime libraries. `[assembly: SupportedOSPlatform("linux")]`, because the WebKit bindings are marked Linux-only.
@@ -165,7 +165,7 @@ Risk: Microsoft's sign-in page could reject an embedded browser. WebView2 and WK
 | Phase | Where | Done when |
 |---|---|---|
 | **D0: Shared core** | Linux | Logic moved to `Educ8.Itslearning`. Shared strings (resx), course colours and the icon-name enum in App.Core. `desktop-parity.md` created. `Educ8.App.Core` has `ShellViewModel` (session/login state, navigation), `LoginViewModel` (begin login, accept the redirect URL), `CoursesViewModel` (+ card VM, search, semester filter), `CalendarViewModel` (week, days, events, filter) and `EventDetailsViewModel`. Unit tests are green and the MCP tests still pass. |
-| **D1: Linux app** | Linux | `Educ8.App.Gtk` with an `Adw.Application` (app id e.g. `io.github.educ8.Educ8`), shell, WebKitGTK login, courses page and calendar. Tried live against SDU: log in, see all courses, browse weeks. Shares the login with the MCP server. |
+| **D1: Linux app** | Linux | `Educ8.App.Gtk` with an `Adw.Application` (app id e.g. `io.github.educ8.Educ8`), shell, WebKitGTK login, courses page and calendar. Tried live against a real itslearning site: log in, see all courses, browse weeks. Shares the login with the MCP server. |
 | **D2: Windows app** | Windows PC | `Educ8.App.Windows` (WinUI 3, unpackaged to start with): the same three screens in XAML with `x:Bind` to the same view models, plus WebView2 login. Tried live. |
 | **D3: macOS app** | Mac | `Educ8.App.Mac` (AppKit): the same screens, WKWebView login, standard menu bar. Tried live. |
 | **D4: Polish** | all | OS secret stores for tokens (libsecret / Keychain / Credential Manager), settings, app icons, keyboard shortcuts, accessibility pass, and packaging (Linux tar.gz + Flatpak bundles are **done** via the release workflow on 2026-11-19; still open: Flathub, MSIX, signed `.app`/`.dmg`). Then the **"Start MCP server"** menu (loopback Streamable HTTP host in the app). |
