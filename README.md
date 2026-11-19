@@ -93,7 +93,7 @@ dotnet run --project src/Educ8.App.Gtk        # the app
 dotnet run --project src/Educ8.Mcp.Server     # the MCP server (stdio); `-- --help` for commands
 ```
 
-Releases are built by GitHub Actions on every push to `main`. Versions are dates: `2026.11.19`, then `2026.11.19.1` for a later release that day. `packaging/flatpak/build-local.sh` builds the Flatpak locally.
+Pull requests are built and tested by GitHub Actions; when one lands in `main`, a release is built. Versions are dates: `2026.11.19`, then `2026.11.19.1` for a later release that day. `packaging/flatpak/build-local.sh` builds the Flatpak locally.
 
 ## Project layout
 

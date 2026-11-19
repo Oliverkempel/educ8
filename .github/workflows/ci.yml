@@ -1,10 +1,9 @@
-# Build and test on pull requests and on pushes to branches other than main (main runs release.yml, which tests too).
+# Build and test pull requests (on open and on every new commit to them). Plain pushes to branches don't run anything;
+# when a pull request lands in main, release.yml tests again and releases.
 name: CI
 
 on:
   pull_request:
-  push:
-    branches-ignore: [main]
 
 concurrency:
   group: ci-${{ github.ref }}
