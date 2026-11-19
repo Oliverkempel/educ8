@@ -1,0 +1,74 @@
+# Decisions log
+
+Newest first. Each entry: date, decision, why.
+
+## 2026-11-19 — Write actions behind a setting (off by default)
+
+- Anything that changes itslearning (first: `submit_assignment`) is a **write tool**. Write tools are only registered when `AllowWriteActions` is on (`config.json`, env `EDUC8_ALLOW_WRITE_ACTIONS`, or `educ8-mcp write-actions on|off`). When off, the model can't see them at all.
+- Defence in depth: each write tool checks the setting again at call time, is annotated `Destructive`, and is **two-step**. Without `confirm=true` it only returns a preview, and the tool description tells the model to show it and get the user's explicit approval.
+- Local file uploads accept only absolute paths to regular, non-hidden files (no `.ssh`, `.config`, …), at most 20 files, 100 MB each and 250 MB in total. This limits what a prompt injection in course content could make the model upload.
+- The gate is in the MCP layer, not the core: the desktop app will offer writes through its own UI and confirmation.
+- Read-only tools now all carry `ReadOnly = true`, so clients can tell them apart.
+
+## 2026-11-19 — Phase 3: assignment feedback from the web view
+
+- REST has no status, score or feedback for a student's own answer, so `get_assignment` reads them from the assignment web view (`WebPageParsers.Assignment`, same SSO chain as Pages/Files). Everything else comes from REST.
+- The web view is optional: if it fails, the tool still returns the REST data with a note, rather than an error.
+- Assignment fixtures are scrubbed beyond the usual: teacher and student names, person ids, **the feedback text and the student's answer text** are replaced with synthetic content (they're personal academic records).
+
+## 2026-11-18 — Files before assignments; Educ8.Documents; PDF page rendering
+
+- The user prioritised reading course files (PDF, Word, Excel, images) over Phase 3, so Phase 4 was done first.
+- File-to-content conversion lives in a new **`Educ8.Documents`** library (no itslearning, MCP or UI dependencies), so the desktop app can reuse it (previews, search). `HtmlToMarkdown` moved there too.
+- Libraries: **PdfPig** (Apache-2.0) for PDF text; **DocumentFormat.OpenXml** (MIT) for docx/xlsx/pptx; **PDFtoImage** (MIT; bundles native PDFium + SkiaSharp for Linux, Windows and macOS) to render PDF pages.
+- **Whole-page rendering instead of embedded-image extraction for PDFs.** Lecture slides are mostly PDFs. Extracting their embedded images gave fragments: 37 pieces of one collage, and none of the diagrams drawn as shapes. A 110 dpi render is legible and small (150–340 KB). If the native library can't load, the extractor falls back to embedded images.
+- PowerPoint isn't rendered: there's no cross-platform .NET renderer without LibreOffice. Slide text, notes and embedded images are good enough for now.
+- Model-facing size limits: 40k text characters per call (page through with `pages`), at most 10 images and 12 MB per call, files up to 50 MB.
+
+## 2026-11-18 — Phase 2: web-chain reader in the core, own HTML→Markdown
+
+- `LearningToolContentReader` and `WebPageParsers` live in `Educ8.Itslearning/Content`, so the desktop app can show the same Pages, Links and Files. The reader returns raw author HTML; Markdown conversion belongs to the MCP layer (the app can render HTML directly).
+- HTML parsing uses **AngleSharp**. HTML→Markdown is our own small converter (`Educ8.Mcp/Formatting/HtmlToMarkdown.cs`) tuned for itslearning's author HTML: nested bold, `<oembed>` videos, inline styles. We didn't add a second HTML library such as ReverseMarkdown.
+- Test fixtures are real pages saved live and **scrubbed** (name, email, person/user ids, signatures, viewstate). Scrub any new fixture the same way, and grep it for personal data before saving.
+- `get_course_overview` loads its sections in parallel and degrades per section, so one failing endpoint doesn't break the overview.
+
+## 2026-11-18 — Phase 1: desktop-ready architecture, shared session, login capture
+
+- The design must allow a future **cross-platform desktop app** (a native itslearning front end) that contains the MCP server and can start it from a menu. Not built now.
+- Consequences: `Educ8.Itslearning` (core) has no MCP or UI dependencies, and `Educ8.Mcp` (tools) is transport-agnostic (`AddEduc8Tools()` works for stdio now and in-app loopback HTTP later). The stdio host is just one composition. See [../design/architecture.md](../design/architecture.md).
+- **Shared session**: one per-user data dir (`LocalApplicationData/Educ8`). Refresh happens under a cross-process file lock, because refresh tokens rotate.
+- **Login capture**: itslearning delivers the code by page script to `itsl-itslearning://login/?…`. The desktop app will intercept that in its WebView. The MCP server offers an OS URL-scheme handler (`register-url-handler`: Linux/Windows) that hands the URL over through a file inbox, plus a paste fallback (`login_complete` tool / CLI paste).
+- Flagged, not decided: **.NET MAUI has no Linux desktop support**; Avalonia or Uno would cover Linux. The core is UI-agnostic, so this can wait.
+
+## 2026-11-18 — Phase 0 results: use REST plus the SSO web chain
+
+- Use the REST API for everything it covers: courses, folders, search, tasks, assignments, own answers, answer files.
+- For Pages (tool 5), Files (tool 5009) and Links (tool 5010), which REST can't serve (Page API returns 500; no file endpoint), use `sso/url/v1` to get a web session, then scrape the tool page or download the file. Keep this isolated and tested, because it depends on undocumented pages.
+- Auth facts: redirect URI `itsl-itslearning://login`, no secret, 5-minute access tokens, rotating refresh tokens. Details: [../api/live-findings.md](../api/live-findings.md).
+- Why: course material (PDF slides, pages) is the core of v1, and this was the only working path found.
+
+## 2026-11-18 — v1 purpose: course study assistant (proposed)
+
+- The first version helps a student who is studying or doing assignments with an LLM. The LLM can read course materials and understand the course and the current assignment. The server is read-only and works from the student's perspective.
+- Plan: [../design/v1-study-assistant-plan.md](../design/v1-study-assistant-plan.md). Phase 0 (live spikes) comes before any real code.
+
+## 2026-11-18 — Build the MCP server in .NET with the official C# SDK
+
+- Language/runtime: C# on .NET 10, using the official MCP C# SDK (`ModelContextProtocol`, a Tier 1 SDK), following the MCP site's C# guide. Notes: [../mcp/csharp-sdk.md](../mcp/csharp-sdk.md).
+- Proposed, not yet confirmed: stdio transport first, with transport-independent libraries so HTTP can be added later. See [../design/architecture.md](../design/architecture.md).
+- Why: the user's choice of .NET. The C# SDK is official and Tier 1, and it supports URL-mode elicitation, which fits the itslearning OAuth login.
+
+## 2026-11-18 — Auth: itslearning OAuth2 with Microsoft login
+
+- We have a registered itslearning OAuth2 **client ID**.
+- The MCP server uses the OAuth2 **authorization code flow** against itslearning (`oauth2/authorize.aspx` → `restapi/oauth2/token`). The user signs in with Microsoft: itslearning's login page sends them to SDU's "Office 365" federated provider, then back to itslearning, which redirects to our `redirect_uri` with a `code`.
+- Microsoft is only the identity provider here. The API accepts **itslearning-issued** bearer tokens; we don't call Microsoft (Entra ID) ourselves or send Microsoft tokens to the API.
+- Session-cookie auth is dropped as a fallback.
+- Keep the client ID in config or an environment variable (e.g. `ITSLEARNING_CLIENT_ID`), not hard-coded in the code or docs.
+- Why: it's the officially supported flow, works with SDU's federated-only login, and gives refresh tokens, so the user only signs in once.
+
+## 2026-11-18 — Project start: study the API before building
+
+- Goal: an MCP server that lets an AI assistant work with the itslearning LMS (starting with SDU's instance, `https://sdu.itslearning.com`).
+- First step: document the REST API only. No code yet, at the user's request.
+- The API reference in `docs/api/` is generated from the official help page by scripts in `docs/api/_generator/`, so it can be refreshed instead of hand-maintained.

@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Console host: stdio MCP server + CLI commands (login, status, logout, URL handler). -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>educ8-mcp</AssemblyName>
+    <RootNamespace>Educ8.Mcp.Server</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Educ8.Mcp\Educ8.Mcp.csproj" />
+  </ItemGroup>
+
+</Project>

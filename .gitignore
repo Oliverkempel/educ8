@@ -1,0 +1,9 @@
+# .NET
+bin/
+obj/
+*.user
+.vs/
+
+# Spike secrets and live responses (contain tokens / personal data)
+spikes/.secrets/
+spikes/out/

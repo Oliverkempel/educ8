@@ -1,0 +1,18 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Turns downloaded files (PDF, Word, Excel, PowerPoint, text, images, zip) into Markdown + images.
+       No itslearning, MCP or UI dependencies: usable by the MCP tools and the future desktop app. -->
+
+  <ItemGroup>
+    <PackageReference Include="AngleSharp" />
+    <PackageReference Include="PdfPig" />
+    <!-- Renders PDF pages to images (bundles native PDFium + Skia for Linux, Windows, macOS). -->
+    <PackageReference Include="PDFtoImage" />
+    <PackageReference Include="DocumentFormat.OpenXml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Educ8.Mcp.Tests" />
+  </ItemGroup>
+
+</Project>

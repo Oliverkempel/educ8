@@ -1,0 +1,18 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- MCP tools and LLM-facing formatting. Transport-agnostic: hosts call AddEduc8Tools(). -->
+
+  <ItemGroup>
+    <PackageReference Include="ModelContextProtocol" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Educ8.Itslearning\Educ8.Itslearning.csproj" />
+    <ProjectReference Include="..\Educ8.Documents\Educ8.Documents.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Educ8.Mcp.Tests" />
+  </ItemGroup>
+
+</Project>
