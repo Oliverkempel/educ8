@@ -4,6 +4,27 @@ An MCP server that lets an AI assistant read your itslearning courses (first tar
 
 Status: login, course overview (including each lesson plan's material), browsing and searching course material, reading Pages and Links, and **reading files**: PDF (text, plus rendered pages on request), Word, PowerPoint, Excel, text/code, notebooks, images and zip archives. Also tasks and **assignments**: details, your submission, status, score and the teacher's feedback (see [docs/design/v1-study-assistant-plan.md](docs/design/v1-study-assistant-plan.md)).
 
+## Install (releases)
+
+Every push to `main` builds a release on the repository's **Releases** page (versions are dates: `2026.11.19`, then `2026.11.19.1`, … for later releases that day). Each release has:
+
+| File | What |
+|---|---|
+| `educ8-<version>-linux-x64.tar.gz`, `…-linux-arm64.tar.gz` | Linux desktop app + `educ8-mcp`. Unpack and run `./install.sh` (installs to `~/.local/opt/educ8`, adds it to the app grid; `./uninstall.sh` removes it). Needs GTK 4, libadwaita and WebKitGTK 6.0: `sudo apt install libgtk-4-1 libadwaita-1-0 libwebkitgtk-6.0-4` (Ubuntu/Debian) or `sudo dnf install gtk4 libadwaita webkitgtk6.0` (Fedora). |
+| `educ8-<version>-x86_64.flatpak`, `…-aarch64.flatpak` | The same app as a Flatpak (brings its own GNOME libraries): `flatpak install --user educ8-<version>-x86_64.flatpak`. |
+| `educ8-mcp-<version>-<platform>` | Just the MCP server, one self-contained file, for `linux-x64`, `linux-arm64`, `win-x64` (zip), `osx-arm64`, `osx-x64`. |
+| `SHA256SUMS` | Checksums of all of the above. |
+
+Then set the client id (see [Configure](#configure)) and point your MCP client at the server:
+
+| Installed as | `command` for Claude Desktop |
+|---|---|
+| tar.gz | `~/.local/opt/educ8/educ8-mcp` (write out your home folder) |
+| Flatpak | `flatpak` with `args: ["run", "--command=educ8-mcp", "io.github.educ8.Educ8"]` |
+| MCP server file | wherever you unpacked `educ8-mcp` |
+
+The Flatpak app shares `~/.local/share/Educ8` (login, settings, MCP activity) with an `educ8-mcp` running outside it. The macOS and Windows builds aren't signed yet: on macOS run `xattr -d com.apple.quarantine educ8-mcp` once; on Windows choose "More info → Run anyway" if SmartScreen asks. `educ8-mcp --version` shows the version.
+
 ## Build and test
 
 ```bash
@@ -36,6 +57,9 @@ The server needs an itslearning OAuth client id. Set it with an environment vari
 The data dir holds the login session (`tokens.json`, readable only by you). Everyone using the same data dir shares one login: the MCP server, the CLI and, later, the desktop app.
 
 ### Write actions (off by default)
+
+The desktop app's **MCP server** page has a switch for this, plus a switch per tool, the running servers and the recent tool calls. Changes apply right away, also to servers that are already running.
+
 
 The server is **read-only** unless you turn on write actions. These let the AI change things in itslearning, currently by handing in assignment answers:
 
@@ -112,6 +136,8 @@ See [docs/design/architecture.md](docs/design/architecture.md).
 
 - `src/Educ8.Itslearning`: itslearning core (auth, tokens, REST client). No MCP and no UI, so the future desktop app can reuse it.
 - `src/Educ8.Documents`: file → Markdown + images (PDF, Office, text, images, zip). No itslearning or MCP code.
+- `src/Educ8.App.Core`: shared view models for the native desktop app (GTK on Linux; WinUI on Windows and AppKit on macOS are planned). See [docs/design/desktop-app-plan.md](docs/design/desktop-app-plan.md).
+- `src/Educ8.App.Gtk`: the Linux desktop app (GTK 4 + libadwaita): courses and a week calendar. Run it with `dotnet run --project src/Educ8.App.Gtk`. It needs the GTK 4, libadwaita 1 and WebKitGTK 6.0 libraries, and shares its login with the MCP server.
 - `src/Educ8.Mcp`: MCP tools and formatting, transport-agnostic.
 - `src/Educ8.Mcp.Server`: stdio host + CLI (`educ8-mcp`).
 - `tests/`: unit tests and an end-to-end MCP protocol test with a fake itslearning.

@@ -22,7 +22,13 @@ public sealed record PersonCourse
     /// <summary>Link to the course in the itslearning web UI.</summary>
     public string? Url { get; init; }
 
-    public IReadOnlyList<CourseTeacher> TeachersInCourse { get; init; } = [];
+    /// <summary>Course accent colour as hex, e.g. "#408AB4".</summary>
+    public string? CourseColor { get; init; }
+
+    /// <summary>Lighter background variant of <see cref="CourseColor"/>, e.g. "#C4ECFF".</summary>
+    public string? CourseFillColor { get; init; }
+
+    public IReadOnlyList<CourseTeacher> TeachersInCourse { get; init => field = value ?? []; } = []; // the API sends null for empty lists
 }
 
 public sealed record CourseTeacher

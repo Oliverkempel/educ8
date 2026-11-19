@@ -69,7 +69,9 @@ Note: registering the handler takes over the `itsl-itslearning` scheme on that m
 - **Now:** `Educ8.Mcp.Server`, a console app on the stdio transport. MCP clients launch it (`claude mcp add …`, Claude Desktop config).
 - **Later, inside the desktop app:** the app hosts the same tools over **Streamable HTTP on loopback** (`ModelContextProtocol.AspNetCore` + Kestrel inside the app process), started and stopped from a menu. It reuses the app's logged-in `TokenManager`/`ItslearningClient`. Following the MCP site's guidance, it should bind to `127.0.0.1` only, restrict `AllowedHosts`, and use a per-install bearer secret so other local processes can't use it. The stdio console host can still ship alongside it for clients that only support stdio. Both share the data directory.
 
-## Desktop app framework (decide later)
+## Desktop app framework (decided 2026-11-19)
+
+**Decided:** native UI per platform: GTK 4 + libadwaita on Linux, AppKit on macOS, WinUI 3 on Windows. All three sit on a shared `Educ8.App.Core`. See [desktop-app-plan.md](desktop-app-plan.md). The original notes follow.
 
 Wanted: cross-platform, "probably MAUI". **.NET MAUI doesn't support Linux desktops** (Windows, macOS via Mac Catalyst, iOS and Android only), and the current dev machine runs Linux. Avalonia UI (or Uno Platform) covers Windows, macOS and Linux. The core libraries are UI-agnostic either way, so this can wait.
 

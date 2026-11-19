@@ -49,8 +49,9 @@ internal static class UrlSchemeHandler
         var process = Environment.ProcessPath ?? throw new InvalidOperationException("Cannot determine the executable path.");
         var dataDir = Educ8Paths.DefaultDataDirectory;
         // When started as `dotnet educ8-mcp.dll`, the process is the dotnet host: pass the dll explicitly.
+        // (AppContext.BaseDirectory, not Assembly.Location: the latter is empty in single-file release builds.)
         return Path.GetFileNameWithoutExtension(process).Equals("dotnet", StringComparison.OrdinalIgnoreCase)
-            ? (process, [typeof(UrlSchemeHandler).Assembly.Location], dataDir)
+            ? (process, [Path.Combine(AppContext.BaseDirectory, typeof(UrlSchemeHandler).Assembly.GetName().Name + ".dll")], dataDir)
             : (process, [], dataDir);
     }
 

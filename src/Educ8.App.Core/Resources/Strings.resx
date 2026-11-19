@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="AppName" xml:space="preserve"><value>Educ8</value></data>
+  <data name="NavCourses" xml:space="preserve"><value>Courses</value></data>
+  <data name="NavCalendar" xml:space="preserve"><value>Calendar</value></data>
+  <data name="SignIn" xml:space="preserve"><value>Sign in with itslearning</value></data>
+  <data name="SignInIntro" xml:space="preserve"><value>Sign in with your itslearning account to see your courses and calendar.</value></data>
+  <data name="SignOut" xml:space="preserve"><value>Sign out</value></data>
+  <data name="SignedInAs" xml:space="preserve"><value>Signed in as {0}</value></data>
+  <data name="Retry" xml:space="preserve"><value>Try again</value></data>
+  <data name="Refresh" xml:space="preserve"><value>Refresh</value></data>
+  <data name="Loading" xml:space="preserve"><value>Loading…</value></data>
+  <data name="OpenInItslearning" xml:space="preserve"><value>Open in itslearning</value></data>
+  <data name="LoginTitle" xml:space="preserve"><value>Sign in to itslearning</value></data>
+  <data name="LoginCancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="LoginFailed" xml:space="preserve"><value>Signing in didn't work: {0}</value></data>
+  <data name="ErrorOffline" xml:space="preserve"><value>Couldn't reach itslearning. Check your internet connection and try again.</value></data>
+  <data name="ErrorSessionExpired" xml:space="preserve"><value>Your itslearning session has expired. Sign in again.</value></data>
+  <data name="ErrorServer" xml:space="preserve"><value>itslearning returned an error ({0}). Try again in a moment.</value></data>
+  <data name="ErrorUnknown" xml:space="preserve"><value>Something went wrong: {0}</value></data>
+  <data name="CoursesTitle" xml:space="preserve"><value>Courses</value></data>
+  <data name="SearchCourses" xml:space="preserve"><value>Search courses</value></data>
+  <data name="FilterCurrentSemester" xml:space="preserve"><value>Current semester</value></data>
+  <data name="FilterAllCourses" xml:space="preserve"><value>All courses</value></data>
+  <data name="CourseCount" xml:space="preserve"><value>{0} courses</value></data>
+  <data name="CourseCountOne" xml:space="preserve"><value>1 course</value></data>
+  <data name="NoCourses" xml:space="preserve"><value>You're not a member of any courses.</value></data>
+  <data name="NoCoursesMatch" xml:space="preserve"><value>No courses match "{0}".</value></data>
+  <data name="NoCurrentCourses" xml:space="preserve"><value>No courses this semester. Show all courses to see older ones.</value></data>
+  <data name="Teachers" xml:space="preserve"><value>Teachers: {0}</value></data>
+  <data name="TeachersMore" xml:space="preserve"><value>{0} and {1} more</value></data>
+  <data name="UpdatedToday" xml:space="preserve"><value>Updated today</value></data>
+  <data name="UpdatedYesterday" xml:space="preserve"><value>Updated yesterday</value></data>
+  <data name="UpdatedDaysAgo" xml:space="preserve"><value>Updated {0} days ago</value></data>
+  <data name="UpdatedOn" xml:space="preserve"><value>Updated {0}</value></data>
+  <data name="NeverUpdated" xml:space="preserve"><value>No activity yet</value></data>
+  <data name="BadgeNotifications" xml:space="preserve"><value>{0} new</value></data>
+  <data name="BadgeBulletins" xml:space="preserve"><value>{0} announcements</value></data>
+  <data name="BadgeBulletinsOne" xml:space="preserve"><value>1 announcement</value></data>
+  <data name="Semester" xml:space="preserve"><value>Semester {0}</value></data>
+  <data name="CalendarTitle" xml:space="preserve"><value>Calendar</value></data>
+  <data name="WeekNumber" xml:space="preserve"><value>Week {0}</value></data>
+  <data name="Today" xml:space="preserve"><value>Today</value></data>
+  <data name="PreviousWeek" xml:space="preserve"><value>Previous week</value></data>
+  <data name="NextWeek" xml:space="preserve"><value>Next week</value></data>
+  <data name="AllCourses" xml:space="preserve"><value>All courses</value></data>
+  <data name="NoEvents" xml:space="preserve"><value>No events</value></data>
+  <data name="NoEventsThisWeek" xml:space="preserve"><value>Nothing in the calendar this week.</value></data>
+  <data name="AllDay" xml:space="preserve"><value>All day</value></data>
+  <data name="EventWhen" xml:space="preserve"><value>When</value></data>
+  <data name="EventWhere" xml:space="preserve"><value>Where</value></data>
+  <data name="EventCourse" xml:space="preserve"><value>Course</value></data>
+  <data name="EventLessonPlan" xml:space="preserve"><value>Lesson plan</value></data>
+  <data name="EventMaterial" xml:space="preserve"><value>Material</value></data>
+  <data name="EventLinkedMaterial" xml:space="preserve"><value>Linked material</value></data>
+  <data name="OpenFileFailed" xml:space="preserve"><value>Couldn't download the file ({0}). Opened it in itslearning instead.</value></data>
+  <data name="Downloading" xml:space="preserve"><value>Downloading…</value></data>
+  <data name="OpenFile" xml:space="preserve"><value>Open with the default app</value></data>
+  <data name="CourseOverview" xml:space="preserve"><value>Overview</value></data>
+  <data name="CourseResources" xml:space="preserve"><value>Resources</value></data>
+  <data name="CourseAnnouncements" xml:space="preserve"><value>Announcements</value></data>
+  <data name="CoursePlans" xml:space="preserve"><value>Lesson plans</value></data>
+  <data name="CourseTasks" xml:space="preserve"><value>Open tasks</value></data>
+  <data name="CourseChanges" xml:space="preserve"><value>Recent changes</value></data>
+  <data name="CourseNoAnnouncements" xml:space="preserve"><value>No announcements.</value></data>
+  <data name="CourseNoPlans" xml:space="preserve"><value>No lesson plans from last week to three weeks ahead.</value></data>
+  <data name="CourseNoTasks" xml:space="preserve"><value>No open tasks.</value></data>
+  <data name="CourseNoChanges" xml:space="preserve"><value>Nothing new in the last two weeks.</value></data>
+  <data name="FolderEmpty" xml:space="preserve"><value>This folder is empty.</value></data>
+  <data name="DueOn" xml:space="preserve"><value>Due {0}</value></data>
+  <data name="DayToday" xml:space="preserve"><value>Today</value></data>
+  <data name="DayYesterday" xml:space="preserve"><value>Yesterday</value></data>
+  <data name="DayTomorrow" xml:space="preserve"><value>Tomorrow</value></data>
+  <data name="DateWithTime" xml:space="preserve"><value>{0}, {1}</value></data>
+  <data name="MoreItems" xml:space="preserve"><value>{0} items</value></data>
+  <data name="Pinned" xml:space="preserve"><value>Pinned</value></data>
+  <data name="CourseOpenHint" xml:space="preserve"><value>Open the course page</value></data>
+  <data name="CoursePlansTab" xml:space="preserve"><value>Plans</value></data>
+  <data name="PlanNoDate" xml:space="preserve"><value>No date</value></data>
+  <data name="CourseNoPlansAtAll" xml:space="preserve"><value>This course has no plans.</value></data>
+  <data name="NavMcp" xml:space="preserve"><value>MCP server</value></data>
+  <data name="McpIntro" xml:space="preserve"><value>AI apps like Claude Desktop start the Educ8 MCP server themselves. Changes here apply right away, also to servers that are already running.</value></data>
+  <data name="McpStatusTitle" xml:space="preserve"><value>Status</value></data>
+  <data name="McpNotRunning" xml:space="preserve"><value>No AI app is using Educ8 right now.</value></data>
+  <data name="McpRunningOne" xml:space="preserve"><value>1 AI app is using Educ8.</value></data>
+  <data name="McpRunningMany" xml:space="preserve"><value>{0} AI apps are using Educ8.</value></data>
+  <data name="McpClientUnknown" xml:space="preserve"><value>MCP client</value></data>
+  <data name="McpRunningSince" xml:space="preserve"><value>Running since {0}</value></data>
+  <data name="McpCalls" xml:space="preserve"><value>{0} calls</value></data>
+  <data name="McpCallsOne" xml:space="preserve"><value>1 call</value></data>
+  <data name="McpLastCall" xml:space="preserve"><value>last {0}</value></data>
+  <data name="McpPermissionsTitle" xml:space="preserve"><value>Permissions</value></data>
+  <data name="McpWriteActions" xml:space="preserve"><value>Allow changes in itslearning</value></data>
+  <data name="McpWriteHint" xml:space="preserve"><value>Lets the AI use tools that change things, like handing in assignments. It always shows a preview first.</value></data>
+  <data name="McpWriteOverridden" xml:space="preserve"><value>Set by the EDUC8_ALLOW_WRITE_ACTIONS environment variable; this switch can't change it.</value></data>
+  <data name="McpToolsTitle" xml:space="preserve"><value>Tools</value></data>
+  <data name="McpToolsDescription" xml:space="preserve"><value>Turned-off tools are hidden from the AI.</value></data>
+  <data name="McpWriteToolsTitle" xml:space="preserve"><value>Tools that change itslearning</value></data>
+  <data name="McpActivityTitle" xml:space="preserve"><value>Recent activity</value></data>
+  <data name="McpNoActivity" xml:space="preserve"><value>No tool calls yet.</value></data>
+  <data name="McpBlocked" xml:space="preserve"><value>refused (turned off)</value></data>
+  <data name="EventNoMaterial" xml:space="preserve"><value>No material found for this lesson.</value></data>
+  <data name="SelectEventHint" xml:space="preserve"><value>Select an event to see its details.</value></data>
+  <data name="KindFolder" xml:space="preserve"><value>Folder</value></data>
+  <data name="KindPage" xml:space="preserve"><value>Page</value></data>
+  <data name="KindFile" xml:space="preserve"><value>File</value></data>
+  <data name="KindLink" xml:space="preserve"><value>Link</value></data>
+  <data name="KindAssignment" xml:space="preserve"><value>Assignment</value></data>
+  <data name="KindTest" xml:space="preserve"><value>Test</value></data>
+  <data name="KindSurvey" xml:space="preserve"><value>Survey</value></data>
+  <data name="KindActivity" xml:space="preserve"><value>Activity</value></data>
+  <data name="KindLearningPath" xml:space="preserve"><value>Learning path</value></data>
+  <data name="KindOther" xml:space="preserve"><value>Item</value></data>
+</root>

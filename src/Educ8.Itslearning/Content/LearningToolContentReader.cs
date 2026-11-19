@@ -30,7 +30,7 @@ internal sealed class DefaultWebHandlerFactory : IWebHandlerFactory
 /// Keeps one web session (cookie jar) per process and re-establishes it when it expires.
 /// URLs on this path carry personal data and signatures: never log them.
 /// </summary>
-public sealed class LearningToolContentReader : IDisposable
+public sealed class LearningToolContentReader : ICourseFileSource, IDisposable
 {
     private readonly ItslearningClient _api;
     private readonly ItslearningOptions _options;
@@ -98,6 +98,50 @@ public sealed class LearningToolContentReader : IDisposable
         var file = await DownloadAsync(link.DownloadUrl, link.FileName, ct).ConfigureAwait(false);
         _files.Add(elementId, file);
         return file;
+    }
+
+    /// <summary>
+    /// Downloads a File element (learning tool 5009) into <paramref name="directory"/>, streamed to disk with no size limit,
+    /// and returns the saved file's path. Used to open course files in the user's own applications.
+    /// </summary>
+    public async Task<string> SaveFileAsync(int elementId, string directory, CancellationToken ct = default)
+    {
+        var tool = await OpenToolAsync(elementId, ct).ConfigureAwait(false);
+        var link = WebPageParsers.File(tool.Html, tool.FinalUri);
+        if (link.DownloadUrl is null)
+            throw new ContentUnavailableException("The file page has no download link (the file may have been removed, or itslearning changed its layout).");
+
+        using var response = await _web.GetAsync(link.DownloadUrl, HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false);
+        if (!response.IsSuccessStatusCode)
+            throw new ContentUnavailableException($"Downloading the file failed ({(int)response.StatusCode}).");
+
+        var disposition = response.Content.Headers.ContentDisposition;
+        var name = SafeFileName(disposition?.FileNameStar ?? disposition?.FileName?.Trim('"') ?? link.FileName, elementId);
+        Directory.CreateDirectory(directory);
+        var path = Path.Combine(directory, name);
+        var partial = path + ".part";
+        try
+        {
+            await using (var stream = await response.Content.ReadAsStreamAsync(ct).ConfigureAwait(false))
+            await using (var file = File.Create(partial))
+                await stream.CopyToAsync(file, ct).ConfigureAwait(false);
+            File.Move(partial, path, overwrite: true);
+        }
+        catch
+        {
+            File.Delete(partial);
+            throw;
+        }
+        return path;
+    }
+
+    /// <summary>A file name safe to create locally: no directories, no invalid characters.</summary>
+    internal static string SafeFileName(string? name, int elementId)
+    {
+        var bare = Path.GetFileName((name ?? "").Replace('\\', '/'));
+        var invalid = Path.GetInvalidFileNameChars();
+        var clean = new string(bare.Select(ch => invalid.Contains(ch) || char.IsControl(ch) ? '_' : ch).ToArray()).Trim().TrimStart('.');
+        return clean.Length > 0 ? clean : $"file-{elementId}";
     }
 
     private async Task<DownloadedFile> DownloadAsync(Uri url, string? fallbackName, CancellationToken ct)

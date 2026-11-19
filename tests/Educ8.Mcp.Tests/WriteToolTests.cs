@@ -175,7 +175,7 @@ public sealed class WriteToolTests : IAsyncLifetime
         _options.AllowWriteActions = false;
         var (text, isError) = await Submit(new() { ["elementId"] = OpenAssignment, ["text"] = "x", ["confirm"] = true });
         Assert.True(isError);
-        Assert.Contains("Write actions are disabled", text);
+        Assert.Contains("Write actions are turned off", text);
         Assert.Equal(0, Posts);
     }
 }

@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Shared desktop-app logic: view models, navigation, presentation resources. No UI toolkit dependencies;
+       the GTK, AppKit and WinUI apps only bind to what's here. See docs/design/desktop-app-plan.md. -->
+
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Educ8.Itslearning\Educ8.Itslearning.csproj" />
+    <ProjectReference Include="..\Educ8.Documents\Educ8.Documents.csproj" />
+    <ProjectReference Include="..\Educ8.Mcp\Educ8.Mcp.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- All user-visible text, shared by the three platform UIs. Strongly typed class generated at build. -->
+    <EmbeddedResource Update="Resources\Strings.resx">
+      <StronglyTypedFileName>$(IntermediateOutputPath)Strings.Designer.cs</StronglyTypedFileName>
+      <StronglyTypedLanguage>CSharp</StronglyTypedLanguage>
+      <StronglyTypedNamespace>Educ8.App.Core.Resources</StronglyTypedNamespace>
+      <StronglyTypedClassName>Strings</StronglyTypedClassName>
+      <PublicClass>true</PublicClass>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Educ8.App.Core.Tests" />
+  </ItemGroup>
+
+</Project>

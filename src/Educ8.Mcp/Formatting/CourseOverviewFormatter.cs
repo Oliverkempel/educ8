@@ -28,15 +28,15 @@ internal sealed record CourseOverview(
     DateOnly PlansFrom,
     DateOnly PlansTo,
     IReadOnlyDictionary<int, PlanMaterials> PlanMaterials,
-    Section<List<StreamItem>>? RecentChanges = null);
+    Section<List<StreamItem>>? RecentChanges = null,
+    Section<List<CalendarEvent>>? UpcomingEvents = null);
 
-/// <summary>The folder holding a lesson plan's material, and what's in it.</summary>
-internal sealed record PlanMaterials(int FolderId, List<CourseResource> Items);
 
 internal static class CourseOverviewFormatter
 {
     private const int MaxPlanItems = 12;
     internal const int RecentChangesDays = 14;
+    internal const int UpcomingDays = 7;
     private const int MaxRecentChanges = 5;
 
     public static string Format(CourseOverview o, TimeZoneInfo zone)
@@ -60,8 +60,25 @@ internal static class CourseOverviewFormatter
             foreach (var t in o.Topics.Value) sb.Append($"| {Markdown.Cell(t.TopicName)} | {t.FolderId?.ToString() ?? ""} |\n");
         }
 
+        // Calendar: the real timetable (lessons plans below are teaching content, not the schedule).
+        if (o.UpcomingEvents is { } upcoming)
+        {
+            sb.Append($"\n## Upcoming calendar events (next {UpcomingDays} days)\n\n");
+            if (upcoming.Error is { } ue) sb.Append($"_({ue})_\n");
+            else if (upcoming.Value!.Count == 0) sb.Append("No events in the calendar for this course in the next week.\n");
+            else
+                foreach (var e in upcoming.Value)
+                {
+                    sb.Append($"- {TimeFormat.When(e.FromDate, e.ToDate, zone)} · **{Markdown.Cell(e.EventTitle)}**");
+                    if (!string.IsNullOrWhiteSpace(e.ImportDescription)) sb.Append($" · {Markdown.Cell(e.ImportDescription)}");
+                    sb.Append($" · event {e.EventId}\n");
+                }
+        }
+
         // Lesson plans
         sb.Append($"\n## Lesson plans {o.PlansFrom:yyyy-MM-dd} – {o.PlansTo:yyyy-MM-dd}\n\n");
+        sb.Append("_Lesson plans describe what is taught and the material; they are not the full timetable. " +
+                  "For when and where things happen (lectures, exercises, project days), use the calendar events above or `get_schedule`._\n\n");
         if (o.Plans.Error is { } pe) sb.Append($"_({pe})_\n");
         else if (o.Plans.Value!.Count == 0) sb.Append("No lesson plans in this period.\n");
         else
@@ -74,11 +91,14 @@ internal static class CourseOverviewFormatter
                 sb.Append('\n');
                 if (o.PlanMaterials.TryGetValue(p.PlanId, out var materials))
                 {
-                    if (materials.Items.Count == 0) sb.Append($"  - (material folder {materials.FolderId} is empty)\n");
+                    if (materials.Items.Count == 0)
+                        sb.Append(materials.FolderId is { } empty ? $"  - (material folder {empty} is empty)\n" : "  - (no material attached to this plan)\n");
                     foreach (var r in materials.Items.Take(MaxPlanItems))
                         sb.Append($"  - {ResourceFormatter.KindLabel(r.Kind, r.LearningToolId)}: {Markdown.Cell(r.Title)} · element {r.ElementId} · {ResourceFormatter.NextStep(r.Kind)}\n");
                     if (materials.Items.Count > MaxPlanItems)
-                        sb.Append($"  - … {materials.Items.Count - MaxPlanItems} more: browse folder {materials.FolderId}\n");
+                        sb.Append(materials.FolderId is { } folder
+                            ? $"  - … {materials.Items.Count - MaxPlanItems} more: browse folder {folder}\n"
+                            : $"  - … {materials.Items.Count - MaxPlanItems} more attached to this plan\n");
                 }
             }
 

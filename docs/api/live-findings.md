@@ -120,7 +120,13 @@ Caveats: this is **web scraping of undocumented pages**, so it may break with it
 ### Lesson plans ↔ material
 
 - `planner/plansinfo/v1?plansIds[0]=…` (documented as "plans with … elements attached") returns **`[]` for a student**, whatever the parameter format (`plansIds[0]=`, repeated, comma-separated).
-- In practice a plan's material is in a **subfolder of its topic's folder named like the plan**: topic "02: Operating Systems & Linux" (folder 2358864) has subfolders "Preparation", "Lecture" and "Exercise", matching plans of those names with that `TopicId`. `courses/{id}/topics/{topicId}/elementids/v1` returns exactly those subfolder ids. Their `IsTopicOrPlanFolder` is `false`, so it can't be used to detect them.
+- **The plan's own elements (2026-11-19): `GET restapi/personal/course/{courseId}/plans/{planId}/v2?ChildId=0`**. It isn't in the REST help pages. itslearning's own plan page (`/plans/courses/{courseId}/plan/{planId}`, script `apps/planner-plan/index.min.js`) calls it, and it **accepts our OAuth bearer token**. The response is camelCase JSON: `id`, `title`, `description`, `start`, `stop`, `url`, `planStatus`, `courseName`, and `elements[]` with `id` (the normal element id, which works with `read_file` etc.), `title`, `url` (site-relative `ViewLearningToolElement.aspx?LearningToolElementId=…`), `type` ("LearningToolElement", …), `typeName` ("File"), `learningToolId`, `isResource`, `isActive`, `isFolder`, `isCompleted` (the student's progress, "3/4" in the UI), and `elementBelongsToPlanFolder`. Example: course 50103's lecture plans hold their PDFs and data sets directly. **No** plan-named folder exists there, so the folder rule below found nothing. This is now the primary source; the folder rule is only a fallback when the endpoint fails.
+- **All plans of a course (2026-11-19), both accept the OAuth token:**
+  - `GET restapi/personal/course/{courseId}/plans/topics/v1?ChildId=0&FilterPersonId=0` → `[{id, name, description, color, url, planCount, start, stop}]`. It lists named topics only.
+  - `GET restapi/personal/course/{courseId}/plans/topics/{topicId}/all/v1?PageIndex&PageSize&ChildId=0` → `{entityArray, total, currentPageIndex, pageSize}` of **full plans with `elements`** (same shape as the single-plan v2). **`topicId` 0 = plans without a topic.** `orderNumber` is the course-wide plan order across topics. Courses can contain untitled, empty placeholder plans.
+  - Example: course 50103 has 1 topic (2 plans) and 12 plans without a topic. Interaction Design has one topic per week, each named like its single plan. That's why the app shows one list in course order rather than groups by topic.
+- Not tried: `…/plans/topics/{topicId}/{current|past|without-date}/v1` and `…/plans/topics/{topicId}/v1`. `…/plans/counts/v1` → `{allPlansCount, currentPlansCount, pastPlansCount, withoutDatePlansCount, topicsCount}` (as strings).
+- Fallback (older finding): a plan's material is often in a **subfolder of its topic's folder named like the plan**: topic "02: Operating Systems & Linux" (folder 2358864) has subfolders "Preparation", "Lecture" and "Exercise", matching plans of those names with that `TopicId`. `courses/{id}/topics/{topicId}/elementids/v1` returns exactly those subfolder ids. Their `IsTopicOrPlanFolder` is `false`, so it can't be used to detect them.
 
 ## Other REST details (Phase 2)
 
@@ -129,3 +135,18 @@ Caveats: this is **web scraping of undocumented pages**, so it may break with it
 - `courses/{id}/topics/v1`: `TopicId, TopicName, FolderId, Color, TopicMode`. Topic folders are the week/module folders.
 - `courses/resources/{id}/v1` works for folders too (`ElementType: "Folder"`).
 - `courses/{id}/resources/search/v1` matches **titles** across the whole course tree.
+
+## Desktop sign-in in an embedded web view (2026-11-19)
+
+- Microsoft sign-in works inside WebKitGTK 2.52 with its default user agent; no override is needed.
+- Hosts in order: `sdu.itslearning.com` (authorize) → `login.microsoftonline.com` → `syddanskuni-onmicrosoft-com.access.mcas.ms` (SDU's Microsoft Defender for Cloud Apps session proxy) → `eu1.itslearning.com` → `sdu.itslearning.com` → script redirect to `itsl-itslearning://login?...`.
+- The script redirect (`top.location.replace`) shows up as a normal navigation-policy decision, so cancelling it there is enough.
+
+## Null lists (2026-11-19)
+
+- The API sends `null`, not `[]`, for empty lists on some records. For example, `TeachersInCourse` is null on some older courses in `personal/courses/v4`. A C# default of `= []` doesn't survive deserialization (System.Text.Json writes the null), so list properties in `Models/` use `{ get; init => field = value ?? []; } = []`. Do the same for any new list property.
+
+## Course file downloads (2026-11-19)
+
+- Searched again for a REST download of course **File** elements (learning tool 5009). There is none in the help pages: downloads exist only for assignment files, page content-block files and "Your files". The plan scripts (`apps/planner-plan`, `apps/planner-element`) don't download either. The plan-element endpoint `restapi/course/{c}/plans/{p}/elements/{e}/v1` (no `personal`) returns **401 with the OAuth token**: like other non-`personal` endpoints, it needs a browser session.
+- So files keep using the SSO web chain (`ViewLearningToolElement.aspx` → tool page → `/Proxy/DownloadRedirect.ashx`). `LearningToolContentReader.SaveFileAsync` streams the file to disk with no size cap (the in-memory `DownloadFileAsync` keeps its 50 MB cap). Verified live: a 9 MB PDF in 3 s, and an xlsx via the Office proxy URL in 1 s. Plan element ids work as element ids here.

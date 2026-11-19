@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Linux desktop app: GTK 4 + libadwaita through Gir.Core. UI code only; behaviour lives in Educ8.App.Core.
+       Needs the GTK 4, libadwaita and WebKitGTK 6 runtime libraries (Ubuntu: libgtk-4-1 libadwaita-1-0 libwebkitgtk-6.0-4). -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>educ8</AssemblyName>
+    <RootNamespace>Educ8.App.Gtk</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="GirCore.Adw-1" />
+    <PackageReference Include="GirCore.WebKit-6.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Educ8.App.Core\Educ8.App.Core.csproj" />
+  </ItemGroup>
+
+</Project>

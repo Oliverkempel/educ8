@@ -2,6 +2,35 @@
 
 Newest first. Each entry: date, decision, why.
 
+## 2026-11-19 — Releases: every push to main, date-based versions
+
+- **CD:** `.github/workflows/release.yml` runs on every push to `main` (and manually). It tests first, and only if everything passes builds and publishes a GitHub release. `ci.yml` builds and tests pull requests and other branches.
+- **Versions are dates (CalVer, UTC):** `YYYY.M.D` for the first release of a day, then `YYYY.M.D.1`, `.2`, … (`.github/scripts/next-version.sh` counts the existing `v…` tags). They're valid .NET versions (every part ≤ 65535) and Flatpak versions. CI passes `-p:Version=…`; the SDK appends `+<commit>` to the informational version. Local builds are `0.0.0-dev`. `gh release create` makes the tag `v<version>` and notes from the commits/PRs since the last one.
+- **Each release contains:** the Linux desktop app with its `educ8-mcp` for x64 and arm64, as a tar.gz (with `install.sh`) and as a Flatpak bundle; `educ8-mcp` alone as a self-contained single file for linux-x64/arm64, win-x64 and osx-arm64/x64; and `SHA256SUMS`. Everything is cross-published from Linux runners (no macOS/Windows runners). aarch64 Flatpaks build under QEMU, the slowest part.
+- **The Flatpak packages the prebuilt self-contained publish** (`packaging/flatpak/io.github.educ8.Educ8.yml`, GNOME 51 runtime) instead of building .NET inside flatpak-builder. That way there's no .NET SDK extension and no offline NuGet source list. Inside the sandbox `Educ8Paths` uses the real `~/.local/share/Educ8` (granted with `--filesystem=xdg-data/Educ8`), so the app shares its login and MCP settings with an `educ8-mcp` started outside it.
+- **Not yet:** code signing (macOS/Windows), Flathub, an About dialog showing the version.
+
+## 2026-11-19 — The desktop app controls the stdio MCP server (no in-app server yet)
+
+- Claude Desktop starts local MCP servers itself (stdio) and can't reach an HTTP server on localhost without a bridge (e.g. `npx mcp-remote`). So the app doesn't host the server. It controls the one clients start: write-actions switch, per-tool switches, status of running servers, and recent tool calls. It doesn't edit Claude's config (not wanted).
+- Settings in `config.json` apply live: tools stay registered, request filters decide per call, and the server sends `tools/list_changed` when the file changes.
+- Activity (tool, client, time, shortened arguments, result) is logged to `<data dir>/mcp/activity.jsonl` and stays on the machine.
+- The in-app Streamable HTTP host stays planned (D4) for clients that support HTTP.
+
+## 2026-11-19 — Desktop UIs use stock platform components
+
+- Each platform UI uses its toolkit's standard widgets and styles (on Linux: libadwaita widgets and its built-in style classes, no custom CSS). No custom visuals such as itslearning course-colour stripes unless the user asks for them.
+- Why: the user wants the app to look native and default. Custom touches added without asking were removed.
+
+## 2026-11-19 — Desktop app: native UI per platform on a shared C# core
+
+- The app must feel native everywhere and use each platform's own UI library: **GTK 4 + libadwaita** (Linux, via Gir.Core), **AppKit** (macOS, .NET for macOS, C#), **WinUI 3** (Windows).
+- All behaviour lives in a shared `Educ8.App.Core` (MVVM, CommunityToolkit.Mvvm) on top of `Educ8.Itslearning`. The platform projects contain only UI code. Login uses each platform's web view, intercepting the `itsl-itslearning://` redirect.
+- Linux first (develop and test on the current machine), then Windows, then macOS; you have all three machines.
+- First features: start page with all courses, and a calendar. Plan: [../design/desktop-app-plan.md](../design/desktop-app-plan.md).
+- Rejected: MAUI (no Linux; Mac Catalyst instead of AppKit), Avalonia/Uno (draw their own controls), SwiftUI (a second codebase/language), Qt (weak C# bindings).
+- Considered for maintenance cost: Uno (one WinUI codebase, but drawn with Skia on Linux/macOS) and MAUI for Windows+macOS with GTK for Linux (two UIs, but Catalyst on the Mac). Chose **three thin native UIs**, with strict rules: logic only in view models, shared strings/colours/icons, a per-screen size budget, a parity tracker and CI for all three. See "Keeping three UIs maintainable" in the plan.
+
 ## 2026-11-19 — Write actions behind a setting (off by default)
 
 - Anything that changes itslearning (first: `submit_assignment`) is a **write tool**. Write tools are only registered when `AllowWriteActions` is on (`config.json`, env `EDUC8_ALLOW_WRITE_ACTIONS`, or `educ8-mcp write-actions on|off`). When off, the model can't see them at all.

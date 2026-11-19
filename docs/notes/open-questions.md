@@ -9,7 +9,8 @@ Resolved 2026-11-18: we have a client ID and use the OAuth2 authorization code f
 Answered by Phase 0 (2026-11-18): the redirect URI is `itsl-itslearning://login`, no client secret is needed, scope `All` works, and the refresh token rotates. See [../api/live-findings.md](../api/live-findings.md).
 
 1. ~~How does the MCP server capture the code?~~ Phase 1: an OS URL-scheme handler (Linux/Windows) plus a paste fallback; the desktop app will use its WebView. Still to check: whether browsers actually prompt for and launch the registered `itsl-itslearning` handler from `top.location.replace`, and how easy copying the link is in practice (Chrome shows nothing; the user needs the handler).
-1b. **Desktop UI framework**: MAUI (no Linux) vs Avalonia/Uno. Decide before building the app.
+1b. ~~Desktop UI framework~~. Decided 2026-11-19: native per platform (GTK 4/libadwaita, AppKit, WinUI 3); see [../design/desktop-app-plan.md](../design/desktop-app-plan.md).
+1c. ~~Does Microsoft's sign-in work inside an embedded WebKitGTK view?~~ Yes (2026-11-19, WebKitGTK 2.52, default user agent). The flow goes sdu.itslearning.com → login.microsoftonline.com → SDU's Defender for Cloud Apps proxy (`*.access.mcas.ms`) → eu1.itslearning.com → sdu.itslearning.com → `itsl-itslearning://login`, which the navigation policy catches.
 2. **Refresh-token lifetime**: how long the user can stay logged in without signing in again. Observe over days.
 3. **Can a `prompt`/`login_hint`-style parameter preselect the SDU Office 365 provider?** It would skip the provider picker. Nice to have.
 4. ~~Can one SSO web session be reused?~~ Yes (2026-11-18). Lifetime is still unknown; expiry is detected and handled with a new SSO.
@@ -47,3 +48,7 @@ Answered by Phase 0 (2026-11-18): the redirect URI is `itsl-itslearning://login`
 8. Rate limits: none documented.
 9. Is the API identical on other itslearning sites? Assume yes (same product), with `BaseUrl` from `restapi/sites/...`. This would let the MCP server support any site, not just SDU.
 10. Which endpoints return HTML in text fields, and how much do they strip?
+
+## Tests and CI
+
+1. A web-content test (`WebContentTests`: `Finds_signed_tool_iframe_on_view_page` once, `Re_establishes_expired_web_session` once) failed twice in a full-solution run and then passed in 17+ reruns. The cause isn't found. CI keeps the `.trx` results of failed runs (artifact `test-results`) so the next occurrence can be diagnosed. Since tests gate releases, a flaky failure means re-running the workflow.

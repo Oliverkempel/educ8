@@ -13,6 +13,8 @@ Project knowledge base for **educ8-mcp**, an MCP server for the itslearning LMS.
 | [api/_generator/](api/_generator/) | Scripts that crawl the help page and regenerate the reference |
 | [mcp/csharp-sdk.md](mcp/csharp-sdk.md) | How to build MCP servers in .NET: packages, setup, tools, errors, elicitation, auth guidance from modelcontextprotocol.io |
 | [design/architecture.md](design/architecture.md) | Proposed architecture: .NET 10, stdio, solution layout, auth flow, tool design |
+| [design/desktop-parity.md](design/desktop-parity.md) | Desktop feature × platform tracker |
+| [design/desktop-app-plan.md](design/desktop-app-plan.md) | **Desktop app plan**: native UI per platform (GTK/libadwaita, AppKit, WinUI 3) on a shared core; first features: courses and calendar |
 | [design/v1-study-assistant-plan.md](design/v1-study-assistant-plan.md) | **v1 plan**: read-only course study assistant — tools, phases, risks |
 | [notes/open-questions.md](notes/open-questions.md) | Unknowns to resolve (auth is the big one) |
 | [notes/decisions.md](notes/decisions.md) | Decisions log, newest first |

@@ -24,7 +24,7 @@ public sealed record AssignmentDetails
     public bool IsAssessmentVisibleForStudents { get; init; }
 
     /// <summary>Files the teacher attached to the assignment.</summary>
-    public IReadOnlyList<AssignmentFile> Files { get; init; } = [];
+    public IReadOnlyList<AssignmentFile> Files { get; init => field = value ?? []; } = []; // the API sends null for empty lists
 
     /// <summary>A template the student is meant to fill in, if any.</summary>
     public AssignmentFile? TemplateFile { get; init; }
@@ -49,7 +49,7 @@ public sealed record AssignmentAnswer
     /// <summary>Answer text (HTML).</summary>
     public string? Text { get; init; }
 
-    public IReadOnlyList<AssignmentFile> Files { get; init; } = [];
+    public IReadOnlyList<AssignmentFile> Files { get; init => field = value ?? []; } = []; // the API sends null for empty lists
 }
 
 /// <summary>Assessment setup (<c>assignments/{elementId}/settings/v1</c>).</summary>
@@ -62,7 +62,7 @@ public sealed record AssignmentSettings
 public sealed record StatusScale
 {
     public string? Title { get; init; }
-    public IReadOnlyList<StatusScaleItem> StatusItems { get; init; } = [];
+    public IReadOnlyList<StatusScaleItem> StatusItems { get; init => field = value ?? []; } = []; // the API sends null for empty lists
 }
 
 public sealed record StatusScaleItem
@@ -76,7 +76,7 @@ public sealed record AssessmentScale
 {
     public string? Title { get; init; }
     public string? Description { get; init; }
-    public IReadOnlyList<AssessmentScaleItem> AssessmentItems { get; init; } = [];
+    public IReadOnlyList<AssessmentScaleItem> AssessmentItems { get; init => field = value ?? []; } = []; // the API sends null for empty lists
 }
 
 public sealed record AssessmentScaleItem

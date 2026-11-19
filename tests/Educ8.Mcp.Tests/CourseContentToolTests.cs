@@ -46,6 +46,9 @@ public sealed class CourseContentToolTests : IAsyncLifetime
                 """),
             "/restapi/personal/courses/50352/tasks/v1" => FakeItslearning.Json("""{"EntityArray":[{"TaskId":1,"ElementId":2425693,"ElementType":"LearningToolElement","LearningToolId":5002,"Title":"Demo Exam","Status":"NotStarted","Deadline":null}],"Total":1}"""),
             "/restapi/personal/courses/50352/bulletins/v1" => new HttpResponseMessage(HttpStatusCode.InternalServerError),
+            "/restapi/personal/courses/50352/calendarevents/v1" => FakeItslearning.Json("""
+                {"EntityArray":[{"Id":1284442,"FromDate":"2026-11-23T07:00:00Z","ToDate":"2026-11-23T15:00:00Z","EventTitle":"Project work - Odense TEK","ImportDescription":"Book selv projektlokaler","CourseId":50352,"LocationTitle":"OSDS"}],"Total":1}
+                """),
             "/restapi/personal/courses/50352/stream/v1" => FakeItslearning.Json("""
                 {"EntityArray":[{"NotificationId":1,"Text":"Teacher added Week 11 slides.pdf","LocationTitle":"OSDS","LocationId":50352,"PublishedDate":"2026-11-17T10:00:00Z","ElementId":555,"ElementType":"LearningToolElement","LearningToolId":5009,"ElementsCount":1}],"Total":1}
                 """),
@@ -119,6 +122,9 @@ public sealed class CourseContentToolTests : IAsyncLifetime
         Assert.Contains("**Demo Exam** · Test · element 2425693 · no deadline set", text);
         Assert.Contains("## Latest announcements\n\n_(couldn't load this part right now)_", text);
         Assert.Contains("## Recent changes (last 14 days)\n\n- Tue 2026-11-17 10:00 · Teacher added Week 11 slides.pdf · File · element 555 · read_file", text);
+        // Regression: a project day that exists only in the calendar (no lesson plan) must appear, and plans must not pass for the timetable.
+        Assert.Contains("## Upcoming calendar events (next 7 days)\n\n- Mon 2026-11-23 07:00–15:00 · **Project work - Odense TEK** · Book selv projektlokaler · event 1284442", text);
+        Assert.Contains("they are not the full timetable", text);
         Assert.Contains("| 2266446 | Page | Course description | read |", text);
     }
 
@@ -170,5 +176,27 @@ public sealed class CourseContentToolTests : IAsyncLifetime
         // Plan "Lecture" in topic 105776 → subfolder "Lecture" of the topic folder 2358879.
         var text = await Call("get_course_overview", new() { ["courseId"] = 50352 });
         Assert.Contains("**Lecture** (topic: 11: Web Technologies): Read **chapter 3**\n  - File: Week 11 slides.pdf · element 555 · read_file\n", text);
+    }
+
+    [Fact]
+    public async Task Overview_reads_material_from_the_plan_itself()
+    {
+        // Plan "Preparation" has no topic folder; its elements come from the plan endpoint (shape as live, synthetic content).
+        var http = _t.Http.Respond;
+        _t.Http.Respond = (req, body) => req.RequestUri!.AbsolutePath == "/restapi/personal/course/50352/plans/1/v2"
+            ? FakeItslearning.Json("""
+                {"id":1,"title":"Preparation","url":"/plans/courses/50352/plan/1","elements":[
+                  {"id":901,"title":"Reading guide.pdf","url":"/LearningToolElement/ViewLearningToolElement.aspx?LearningToolElementId=901&IsPlanContext=True","type":"LearningToolElement","typeName":"File","learningToolId":5009,"isResource":true,"isActive":true,"isFolder":false},
+                  {"id":902,"title":"Hidden draft","type":"LearningToolElement","learningToolId":5,"isResource":true,"isActive":false,"isFolder":false}
+                ],"learningObjectives":[],"customFields":null}
+                """)
+            : http(req, body);
+
+        var text = await Call("get_course_overview", new() { ["courseId"] = 50352 });
+        Assert.Contains("**Preparation**", text);
+        Assert.Contains("  - File: Reading guide.pdf · element 901 · read_file\n", text);
+        Assert.DoesNotContain("Hidden draft", text);
+        // Plan "Lecture" has no plan data here (404), so the topic-folder fallback still finds its material.
+        Assert.Contains("  - File: Week 11 slides.pdf · element 555 · read_file\n", text);
     }
 }

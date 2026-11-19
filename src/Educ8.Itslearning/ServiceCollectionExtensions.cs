@@ -29,6 +29,7 @@ public static class ServiceCollectionExtensions
         services.AddTransient<BearerTokenHandler>();
         services.TryAddSingleton<IWebHandlerFactory, DefaultWebHandlerFactory>();
         services.TryAddSingleton<LearningToolContentReader>();
+        services.TryAddSingleton<ICourseFileSource>(sp => sp.GetRequiredService<LearningToolContentReader>());
 
         services.AddHttpClient<OAuthClient>(http => Configure(http, options));
         services.AddHttpClient<ItslearningClient>(http =>

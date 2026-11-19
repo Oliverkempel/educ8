@@ -111,6 +111,53 @@ public sealed record PlanPreview
     public int TopicId { get; init; }
 }
 
+/// <summary>
+/// A lesson plan with its elements: <c>personal/course/{courseId}/plans/{planId}/v2?ChildId=0</c>. Not in the REST help pages;
+/// itslearning's own plan page uses it, and it accepts our OAuth token (see docs/api/live-findings.md).
+/// </summary>
+public sealed record CoursePlan
+{
+    public int Id { get; init; }
+    public bool IsActive { get; init; } = true;
+    public string Title { get; init; } = "";
+    public string? Description { get; init; }
+    public DateTimeOffset? Start { get; init; }
+    public DateTimeOffset? Stop { get; init; }
+    public IReadOnlyList<PlanElement> Elements { get; init => field = value ?? []; } = []; // the API sends null for empty lists
+
+    /// <summary>The course's plan order (itslearning shows plans sorted by this).</summary>
+    public int OrderNumber { get; init; }
+    public bool Pinned { get; init; }
+
+    /// <summary>itslearning's "current plan" marker.</summary>
+    public bool IsCurrentPlan { get; init; }
+}
+
+/// <summary>A planner topic (<c>personal/course/{courseId}/plans/topics/v1</c>, undocumented). Plans without a topic are listed under id 0.</summary>
+public sealed record PlanTopic
+{
+    public int Id { get; init; }
+    public string Name { get; init; } = "";
+    public int PlanCount { get; init; }
+}
+
+/// <summary>An element attached to a lesson plan (resource or activity). <see cref="Id"/> is the element id used everywhere else.</summary>
+public sealed record PlanElement
+{
+    public int Id { get; init; }
+    public string Title { get; init; } = "";
+
+    /// <summary>Site-relative link to the element, e.g. <c>/LearningToolElement/ViewLearningToolElement.aspx?LearningToolElementId=…</c>.</summary>
+    public string? Url { get; init; }
+
+    /// <summary>Raw element type, e.g. "LearningToolElement", "Folder", "CustomActivity".</summary>
+    public string Type { get; init; } = "";
+    public int LearningToolId { get; init; }
+    public bool IsResource { get; init; }
+    public bool IsActive { get; init; } = true;
+    public bool IsFolder { get; init; }
+}
+
 internal sealed record SsoUrl
 {
     public string Url { get; init; } = "";

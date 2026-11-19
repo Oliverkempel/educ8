@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.educ8.Educ8</id>
+  <name>Educ8</name>
+  <summary>Your itslearning courses, plans and calendar</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>LicenseRef-proprietary</project_license>
+  <description>
+    <p>A native client for the itslearning learning platform: course pages with plans and resources, a week calendar
+    with lesson plans and material, and control over the Educ8 MCP server that lets AI assistants read your courses.</p>
+  </description>
+  <launchable type="desktop-id">io.github.educ8.Educ8.desktop</launchable>
+  <content_rating type="oars-1.1"/>
+</component>

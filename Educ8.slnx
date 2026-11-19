@@ -1,11 +1,14 @@
 <Solution>
   <Folder Name="/src/">
+    <Project Path="src/Educ8.App.Core/Educ8.App.Core.csproj" />
+    <Project Path="src/Educ8.App.Gtk/Educ8.App.Gtk.csproj" />
     <Project Path="src/Educ8.Documents/Educ8.Documents.csproj" />
     <Project Path="src/Educ8.Itslearning/Educ8.Itslearning.csproj" />
     <Project Path="src/Educ8.Mcp.Server/Educ8.Mcp.Server.csproj" />
     <Project Path="src/Educ8.Mcp/Educ8.Mcp.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/Educ8.App.Core.Tests/Educ8.App.Core.Tests.csproj" />
     <Project Path="tests/Educ8.Documents.Tests/Educ8.Documents.Tests.csproj" />
     <Project Path="tests/Educ8.Itslearning.Tests/Educ8.Itslearning.Tests.csproj" />
     <Project Path="tests/Educ8.Mcp.Tests/Educ8.Mcp.Tests.csproj" />

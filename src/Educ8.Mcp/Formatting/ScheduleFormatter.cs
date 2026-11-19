@@ -4,9 +4,6 @@ using Educ8.Itslearning.Models;
 
 namespace Educ8.Mcp.Formatting;
 
-/// <summary>A lesson plan linked from an event, with what's known about it.</summary>
-internal sealed record LinkedPlan(CalendarPlanLink Link, PlanPreview? Plan, PlanMaterials? Materials);
-
 internal static class ScheduleFormatter
 {
     public static string FormatSchedule(IReadOnlyList<CalendarEvent> events, DateTime fromLocal, DateTime toLocal, string? courseTitle, int maxResults, TimeZoneInfo zone)
@@ -66,10 +63,14 @@ internal static class ScheduleFormatter
                 var planText = HtmlToMarkdown.ConvertExcerpt(plan?.PlanDescription, 1500);
                 if (planText.Length > 0) sb.Append(string.Join('\n', planText.Split('\n').Select(l => "  " + l))).Append('\n');
                 if (materials is null) continue;
-                if (materials.Items.Count == 0) sb.Append($"  - (material folder {materials.FolderId} is empty)\n");
+                if (materials.Items.Count == 0)
+                    sb.Append(materials.FolderId is { } empty ? $"  - (material folder {empty} is empty)\n" : "  - (no material attached to this plan)\n");
                 foreach (var r in materials.Items.Take(15))
                     sb.Append($"  - {ResourceFormatter.KindLabel(r.Kind, r.LearningToolId)}: {Markdown.Cell(r.Title)} · element {r.ElementId} · {ResourceFormatter.NextStep(r.Kind)}\n");
-                if (materials.Items.Count > 15) sb.Append($"  - … {materials.Items.Count - 15} more: browse folder {materials.FolderId}\n");
+                if (materials.Items.Count > 15)
+                    sb.Append(materials.FolderId is { } folder
+                        ? $"  - … {materials.Items.Count - 15} more: browse folder {folder}\n"
+                        : $"  - … {materials.Items.Count - 15} more attached to this plan\n");
             }
             sb.Append('\n');
         }
