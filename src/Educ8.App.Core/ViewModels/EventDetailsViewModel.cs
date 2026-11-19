@@ -1,0 +1,140 @@
+using System.Collections.ObjectModel;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using Educ8.App.Core.Presentation;
+using Educ8.App.Core.Resources;
+using Educ8.App.Core.Services;
+using Educ8.Documents;
+using Educ8.Itslearning.Http;
+using Educ8.Itslearning.Models;
+
+namespace Educ8.App.Core.ViewModels;
+
+/// <summary>Details pane for a calendar event: time, place, lesson plan with its material, linked material.</summary>
+public sealed partial class EventDetailsViewModel(Func<ItslearningClient> client, TimeProvider time, IOpenUrl openUrl) : ObservableObject
+{
+    private CancellationTokenSource? _loading;
+    private Uri? _eventUrl;
+
+    [ObservableProperty]
+    public partial bool HasEvent { get; private set; }
+
+    [ObservableProperty]
+    public partial bool IsLoading { get; private set; }
+
+    [ObservableProperty]
+    public partial string? ErrorMessage { get; private set; }
+
+    [ObservableProperty]
+    public partial string Title { get; private set; } = "";
+
+    /// <summary>"Thursday 19 November 2026, 12:00–14:00".</summary>
+    [ObservableProperty]
+    public partial string WhenText { get; private set; } = "";
+
+    /// <summary>Room and teachers from the timetable import.</summary>
+    [ObservableProperty]
+    public partial string PlaceText { get; private set; } = "";
+
+    [ObservableProperty]
+    public partial string CourseTitle { get; private set; } = "";
+
+    [ObservableProperty]
+    public partial string DescriptionText { get; private set; } = "";
+
+    public ObservableCollection<PlanItemViewModel> Plans { get; } = [];
+
+    public ObservableCollection<MaterialItemViewModel> LinkedMaterial { get; } = [];
+
+    public string HintText => Strings.SelectEventHint;
+
+    public async Task LoadAsync(int eventId)
+    {
+        _loading?.Cancel();
+        var cts = _loading = new CancellationTokenSource();
+        Clear();
+        IsLoading = true;
+        try
+        {
+            var c = client();
+            var e = await c.GetCalendarEventAsync(eventId, cts.Token);
+            if (cts.IsCancellationRequested) return;
+            var zone = time.LocalTimeZone;
+            Title = e.EventTitle;
+            var start = TimeZoneInfo.ConvertTime(e.FromDate, zone);
+            WhenText = $"{start.ToString("D", System.Globalization.CultureInfo.CurrentCulture)}, {Texts.TimeRange(e.FromDate, e.ToDate, zone)}";
+            PlaceText = string.Join(", ", new[] { e.ImportDescription?.Trim() }.Concat(e.Bookings.Select(b => b.Name)).Where(s => !string.IsNullOrEmpty(s)));
+            CourseTitle = e.LocationTitle ?? "";
+            DescriptionText = HtmlToText.Convert(e.Description);
+            _eventUrl = Uri.TryCreate(e.EventUrl, UriKind.Absolute, out var url) ? url : null;
+            foreach (var l in e.ElementLinks) LinkedMaterial.Add(new MaterialItemViewModel(l.Title, l.Kind, l.Url, openUrl));
+            HasEvent = true;
+
+            var plans = await c.GetEventPlansAsync(e, cts.Token);
+            if (cts.IsCancellationRequested) return;
+            foreach (var p in plans) Plans.Add(new PlanItemViewModel(p, openUrl));
+        }
+        catch (OperationCanceledException) when (cts.IsCancellationRequested)
+        {
+            // superseded by another selection
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = Texts.Error(ex);
+        }
+        finally
+        {
+            if (_loading == cts) IsLoading = false;
+        }
+    }
+
+    public void Clear()
+    {
+        HasEvent = false;
+        ErrorMessage = null;
+        Title = WhenText = PlaceText = CourseTitle = DescriptionText = "";
+        _eventUrl = null;
+        Plans.Clear();
+        LinkedMaterial.Clear();
+    }
+
+    [RelayCommand]
+    private void OpenInItslearning()
+    {
+        if (_eventUrl is not null) openUrl.Open(_eventUrl);
+    }
+}
+
+/// <summary>A lesson plan linked from the event, with its description and material.</summary>
+public sealed class PlanItemViewModel
+{
+    internal PlanItemViewModel(LinkedPlan plan, IOpenUrl openUrl)
+    {
+        Name = plan.Link.PlanName;
+        TopicText = plan.Link.TopicName ?? "";
+        DescriptionText = HtmlToText.Convert(plan.Plan?.PlanDescription);
+        Material = plan.Materials?.Items.Select(r => new MaterialItemViewModel(r.Title, r.Kind, r.Url, openUrl)).ToList() ?? [];
+        EmptyText = Material.Count == 0 ? Strings.EventNoMaterial : null;
+    }
+
+    public string Name { get; }
+    public string TopicText { get; }
+    public string DescriptionText { get; }
+    public IReadOnlyList<MaterialItemViewModel> Material { get; }
+    public string? EmptyText { get; }
+}
+
+/// <summary>A piece of course material (file, page, link, …). Opens in itslearning for now; in-app viewing comes later.</summary>
+public sealed partial class MaterialItemViewModel(string title, ResourceKind kind, string? url, IOpenUrl openUrl)
+{
+    public string Title { get; } = title;
+    public string KindText { get; } = Texts.Kind(kind);
+    public AppIcon Icon { get; } = AppIcons.For(kind);
+    public Uri? Url { get; } = Uri.TryCreate(url, UriKind.Absolute, out var u) ? u : null;
+
+    [RelayCommand]
+    private void Open()
+    {
+        if (Url is not null) openUrl.Open(Url);
+    }
+}

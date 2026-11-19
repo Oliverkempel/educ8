@@ -112,6 +112,7 @@ See [docs/design/architecture.md](docs/design/architecture.md).
 
 - `src/Educ8.Itslearning`: itslearning core (auth, tokens, REST client). No MCP and no UI, so the future desktop app can reuse it.
 - `src/Educ8.Documents`: file → Markdown + images (PDF, Office, text, images, zip). No itslearning or MCP code.
+- `src/Educ8.App.Core`: shared view models for the native desktop app (planned: GTK on Linux, WinUI on Windows, AppKit on macOS). See [docs/design/desktop-app-plan.md](docs/design/desktop-app-plan.md).
 - `src/Educ8.Mcp`: MCP tools and formatting, transport-agnostic.
 - `src/Educ8.Mcp.Server`: stdio host + CLI (`educ8-mcp`).
 - `tests/`: unit tests and an end-to-end MCP protocol test with a fake itslearning.

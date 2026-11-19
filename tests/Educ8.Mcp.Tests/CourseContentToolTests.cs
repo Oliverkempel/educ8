@@ -46,6 +46,9 @@ public sealed class CourseContentToolTests : IAsyncLifetime
                 """),
             "/restapi/personal/courses/50352/tasks/v1" => FakeItslearning.Json("""{"EntityArray":[{"TaskId":1,"ElementId":2425693,"ElementType":"LearningToolElement","LearningToolId":5002,"Title":"Demo Exam","Status":"NotStarted","Deadline":null}],"Total":1}"""),
             "/restapi/personal/courses/50352/bulletins/v1" => new HttpResponseMessage(HttpStatusCode.InternalServerError),
+            "/restapi/personal/courses/50352/calendarevents/v1" => FakeItslearning.Json("""
+                {"EntityArray":[{"Id":1284442,"FromDate":"2026-11-23T07:00:00Z","ToDate":"2026-11-23T15:00:00Z","EventTitle":"Project work - Odense TEK","ImportDescription":"Book selv projektlokaler","CourseId":50352,"LocationTitle":"OSDS"}],"Total":1}
+                """),
             "/restapi/personal/courses/50352/stream/v1" => FakeItslearning.Json("""
                 {"EntityArray":[{"NotificationId":1,"Text":"Teacher added Week 11 slides.pdf","LocationTitle":"OSDS","LocationId":50352,"PublishedDate":"2026-11-17T10:00:00Z","ElementId":555,"ElementType":"LearningToolElement","LearningToolId":5009,"ElementsCount":1}],"Total":1}
                 """),
@@ -119,6 +122,9 @@ public sealed class CourseContentToolTests : IAsyncLifetime
         Assert.Contains("**Demo Exam** · Test · element 2425693 · no deadline set", text);
         Assert.Contains("## Latest announcements\n\n_(couldn't load this part right now)_", text);
         Assert.Contains("## Recent changes (last 14 days)\n\n- Tue 2026-11-17 10:00 · Teacher added Week 11 slides.pdf · File · element 555 · read_file", text);
+        // Regression: a project day that exists only in the calendar (no lesson plan) must appear, and plans must not pass for the timetable.
+        Assert.Contains("## Upcoming calendar events (next 7 days)\n\n- Mon 2026-11-23 07:00–15:00 · **Project work - Odense TEK** · Book selv projektlokaler · event 1284442", text);
+        Assert.Contains("they are not the full timetable", text);
         Assert.Contains("| 2266446 | Page | Course description | read |", text);
     }
 

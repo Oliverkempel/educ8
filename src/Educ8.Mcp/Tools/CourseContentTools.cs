@@ -39,45 +39,15 @@ public static class CourseContentTools
             var bulletins = Section<EntityList<LightBulletin>>.LoadAsync(() => client.GetCourseBulletinsAsync(courseId, 5, ct));
             var changes = Section<List<StreamItem>>.LoadAsync(() =>
                 client.GetCourseStreamAsync(courseId, time.GetUtcNow().AddDays(-CourseOverviewFormatter.RecentChangesDays), 10, ct));
-            await Task.WhenAll(topics, root, plans, tasks, bulletins, changes);
-            var planMaterials = await LoadPlanMaterialsAsync(client, courseId, topics.Result.Value, plans.Result.Value, ct);
+            var now = time.GetUtcNow();
+            var events = Section<List<CalendarEvent>>.LoadAsync(() =>
+                client.GetCourseCalendarEventsAsync(courseId, now, now.AddDays(CourseOverviewFormatter.UpcomingDays), ct));
+            await Task.WhenAll(topics, root, plans, tasks, bulletins, changes, events);
+            var planMaterials = await client.GetPlanMaterialsAsync(courseId, topics.Result.Value, plans.Result.Value, ct);
 
-            var overview = new CourseOverview(course, topics.Result, root.Result, plans.Result, tasks.Result, bulletins.Result, from, to, planMaterials, changes.Result);
+            var overview = new CourseOverview(course, topics.Result, root.Result, plans.Result, tasks.Result, bulletins.Result, from, to, planMaterials, changes.Result, events.Result);
             return HtmlToMarkdown.Truncate(CourseOverviewFormatter.Format(overview, time.LocalTimeZone), MaxOutputChars);
         }, ct);
-
-    /// <summary>
-    /// A plan's material lives in a subfolder of its topic's folder named like the plan (e.g. topic "02: OS" → "Lecture").
-    /// The plan-info endpoint that would say this directly returns nothing for students (see docs/api/live-findings.md).
-    /// </summary>
-    internal static async Task<IReadOnlyDictionary<int, PlanMaterials>> LoadPlanMaterialsAsync(
-        ItslearningClient client, int courseId, List<CourseTopic>? topics, List<PlanPreview>? plans, CancellationToken ct)
-    {
-        if (topics is null || plans is null || plans.Count == 0) return new Dictionary<int, PlanMaterials>();
-        var topicFolders = topics.Where(t => t.FolderId is not null).ToDictionary(t => t.TopicId, t => t.FolderId!.Value);
-        var topicIds = plans.Select(p => p.TopicId).Where(topicFolders.ContainsKey).Distinct().Take(8).ToList();
-
-        async Task<List<CourseResource>?> TryList(int folderId)
-        {
-            try { return await client.GetFolderResourcesAsync(courseId, folderId, ct); }
-            catch (Exception e) when (e is ItslearningApiException or HttpRequestException) { return null; }
-        }
-
-        var subfolders = await Task.WhenAll(topicIds.Select(async id => (TopicId: id, Items: await TryList(topicFolders[id]))));
-        var planFolder = new Dictionary<int, int>();
-        foreach (var plan in plans)
-        {
-            var match = subfolders.FirstOrDefault(s => s.TopicId == plan.TopicId).Items?
-                .FirstOrDefault(r => r.Kind == ResourceKind.Folder && r.Title.Trim().Equals(plan.PlanName.Trim(), StringComparison.OrdinalIgnoreCase));
-            if (match is not null) planFolder[plan.PlanId] = match.ElementId;
-        }
-
-        var folderIds = planFolder.Values.Distinct().Take(15).ToList();
-        var contents = (await Task.WhenAll(folderIds.Select(async id => (Id: id, Items: await TryList(id)))))
-            .Where(f => f.Items is not null).ToDictionary(f => f.Id, f => f.Items!);
-        return planFolder.Where(p => contents.ContainsKey(p.Value))
-            .ToDictionary(p => p.Key, p => new PlanMaterials(p.Value, contents[p.Value]));
-    }
 
     [McpServerTool(Name = "browse_course_materials", Title = "Browse course folder", ReadOnly = true, Idempotent = true, OpenWorld = true)]
     [Description("Lists the items in a course folder (the course's top level if folderId is omitted): element id, type and title.")]

@@ -4,9 +4,6 @@ using Educ8.Itslearning.Models;
 
 namespace Educ8.Mcp.Formatting;
 
-/// <summary>A lesson plan linked from an event, with what's known about it.</summary>
-internal sealed record LinkedPlan(CalendarPlanLink Link, PlanPreview? Plan, PlanMaterials? Materials);
-
 internal static class ScheduleFormatter
 {
     public static string FormatSchedule(IReadOnlyList<CalendarEvent> events, DateTime fromLocal, DateTime toLocal, string? courseTitle, int maxResults, TimeZoneInfo zone)

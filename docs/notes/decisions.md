@@ -2,6 +2,15 @@
 
 Newest first. Each entry: date, decision, why.
 
+## 2026-11-19 — Desktop app: native UI per platform on a shared C# core
+
+- The app must feel native everywhere and use each platform's own UI library: **GTK 4 + libadwaita** (Linux, via Gir.Core), **AppKit** (macOS, .NET for macOS, C#), **WinUI 3** (Windows).
+- All behaviour lives in a shared `Educ8.App.Core` (MVVM, CommunityToolkit.Mvvm) on top of `Educ8.Itslearning`. The platform projects contain only UI code. Login uses each platform's web view, intercepting the `itsl-itslearning://` redirect.
+- Linux first (develop and test on the current machine), then Windows, then macOS; you have all three machines.
+- First features: start page with all courses, and a calendar. Plan: [../design/desktop-app-plan.md](../design/desktop-app-plan.md).
+- Rejected: MAUI (no Linux; Mac Catalyst instead of AppKit), Avalonia/Uno (draw their own controls), SwiftUI (a second codebase/language), Qt (weak C# bindings).
+- Considered for maintenance cost: Uno (one WinUI codebase, but drawn with Skia on Linux/macOS) and MAUI for Windows+macOS with GTK for Linux (two UIs, but Catalyst on the Mac). Chose **three thin native UIs**, with strict rules: logic only in view models, shared strings/colours/icons, a per-screen size budget, a parity tracker and CI for all three. See "Keeping three UIs maintainable" in the plan.
+
 ## 2026-11-19 — Write actions behind a setting (off by default)
 
 - Anything that changes itslearning (first: `submit_assignment`) is a **write tool**. Write tools are only registered when `AllowWriteActions` is on (`config.json`, env `EDUC8_ALLOW_WRITE_ACTIONS`, or `educ8-mcp write-actions on|off`). When off, the model can't see them at all.

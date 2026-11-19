@@ -110,7 +110,7 @@ Solution layout from [architecture.md](architecture.md) (desktop-ready); stdio h
 - `get_schedule(from?, days=7, courseId?)`: events by day in local time, with rooms and teachers from the timetable import (no detail calls needed).
 - `get_event(eventId)`: time, place, linked lesson plans with their description and **material** (planner + plan-name folder mapping), linked elements, and the itslearning link.
 - `whats_new(courseId?, days=7)`: the bell ("For you": feedback available, group submissions; announcement duplicates removed) plus course updates grouped by day, with grouped updates expanded to their elements and announcements shown with text.
-- `get_course_overview` gained a "Recent changes" section (course stream, last 14 days).
+- `get_course_overview` gained a "Recent changes" section (course stream, last 14 days) and an **"Upcoming calendar events"** section (course calendar, next 7 days). The lesson-plan section now says plans aren't the timetable. Why: a Claude session running an old server (no `get_schedule`) built "next week" from lesson plans and wrongly said a project day was free. That course has calendar events but no plans.
 
 ### Phase 5 — Polish
 MCP prompts (`study_course`, `work_on_assignment`), optional resources, caching (course list and folder trees cached for a few minutes), setup README, packaging (e.g. `dotnet tool` so `claude mcp add` can run it).

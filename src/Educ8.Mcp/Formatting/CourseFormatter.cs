@@ -7,8 +7,7 @@ namespace Educ8.Mcp.Formatting;
 internal static partial class CourseFormatter
 {
     /// <summary>Semester from an SDU-style course code suffix, e.g. "T510046101-1-E26" → "E26" (E = autumn, F = spring).</summary>
-    public static string? Semester(string? courseCode) =>
-        courseCode is not null && SemesterSuffix().Match(courseCode) is { Success: true } m ? m.Groups[1].Value : null;
+    public static string? Semester(string? courseCode) => CourseCodes.Semester(courseCode);
 
     /// <summary>Courses sorted by most recent activity, optionally filtered by a case-insensitive text match.</summary>
     public static IReadOnlyList<PersonCourse> Select(IEnumerable<PersonCourse> courses, string? search) =>
@@ -45,7 +44,4 @@ internal static partial class CourseFormatter
             sb.Append($"\n{courses.Count - maxResults} more not shown. Use `search` to narrow down, or raise `maxResults`.\n");
         return sb.ToString();
     }
-
-    [GeneratedRegex(@"-([EF]\d{2})$")]
-    private static partial Regex SemesterSuffix();
 }

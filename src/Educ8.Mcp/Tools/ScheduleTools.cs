@@ -15,8 +15,9 @@ public static class ScheduleTools
     internal const int MaxDays = 42;
 
     [McpServerTool(Name = "get_schedule", Title = "My schedule", ReadOnly = true, Idempotent = true, OpenWorld = true)]
-    [Description("The user's calendar: lectures, exercise classes and other events with times, rooms and teachers, grouped by day. " +
-                 "Default: today and the next 6 days. Use it for \"what do I have this week / tomorrow?\".")]
+    [Description("The user's calendar/timetable: lectures, exercise classes, project days and other events with times, rooms and teachers, " +
+                 "grouped by day. Default: today and the next 6 days. ALWAYS use this for schedule questions (\"what do I have this week / " +
+                 "next week / tomorrow?\", \"am I free on Monday?\"); course lesson plans are not the timetable.")]
     public static Task<string> GetSchedule(
         LoginService login, ItslearningClient client, TimeProvider time,
         [Description("First day, as yyyy-MM-dd, or \"today\" / \"tomorrow\". Default: today.")] string? from = null,
@@ -57,38 +58,9 @@ public static class ScheduleTools
         ToolGuard.RunAsync(login, async () =>
         {
             var e = await client.GetCalendarEventAsync(eventId, ct);
-            var plans = new List<LinkedPlan>();
-            if (e.PlanLinks.Count > 0 && e.EventType == "Course" && e.LocationId > 0)
-            {
-                var (previews, materials) = await PlanDetailsAsync(client, e, ct);
-                plans.AddRange(e.PlanLinks.Select(l => new LinkedPlan(l, previews.GetValueOrDefault(l.PlanId), materials.GetValueOrDefault(l.PlanId))));
-            }
-            else plans.AddRange(e.PlanLinks.Select(l => new LinkedPlan(l, null, null)));
+            var plans = await client.GetEventPlansAsync(e, ct);
             return ScheduleFormatter.FormatEvent(e, plans, time.LocalTimeZone);
         }, ct);
-
-    /// <summary>
-    /// Finds the linked plans in the course planner (description, topic) and loads their material folders. Best effort:
-    /// failures just leave the plan without details.
-    /// </summary>
-    private static async Task<(IReadOnlyDictionary<int, PlanPreview>, IReadOnlyDictionary<int, PlanMaterials>)> PlanDetailsAsync(
-        ItslearningClient client, CalendarEventDetails e, CancellationToken ct)
-    {
-        try
-        {
-            var day = DateOnly.FromDateTime(e.FromDate.UtcDateTime);
-            var plansTask = client.GetCoursePlansAsync(e.LocationId, day.AddDays(-1), day.AddDays(1), ct);
-            var topicsTask = client.GetCourseTopicsAsync(e.LocationId, ct);
-            await Task.WhenAll(plansTask, topicsTask);
-            var linked = plansTask.Result.Where(p => e.PlanLinks.Any(l => l.PlanId == p.PlanId)).ToList();
-            var materials = await CourseContentTools.LoadPlanMaterialsAsync(client, e.LocationId, topicsTask.Result, linked, ct);
-            return (linked.DistinctBy(p => p.PlanId).ToDictionary(p => p.PlanId), materials);
-        }
-        catch (Exception ex) when (ex is ItslearningApiException or HttpRequestException)
-        {
-            return (new Dictionary<int, PlanPreview>(), new Dictionary<int, PlanMaterials>());
-        }
-    }
 
     internal static DateTime ParseDay(string? value, DateTime today) => value?.Trim().ToLowerInvariant() switch
     {
