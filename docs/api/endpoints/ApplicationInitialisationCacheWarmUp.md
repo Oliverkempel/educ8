@@ -1,6 +1,6 @@
 # ApplicationInitialisationCacheWarmUp
 
-> Auto-generated from https://sdu.itslearning.com/restapi/help — do not hand-edit; regenerate instead.
+> Auto-generated from an itslearning site's /restapi/help — do not hand-edit; regenerate instead.
 
 **Overview:** Controller to help initialise the cache on start up. The cache is called from Web.config. It is triggered on application start-up /'iisreset' and application recycle. See tag 'applicationInitialization' in web.config.
 

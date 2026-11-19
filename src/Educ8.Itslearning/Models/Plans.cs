@@ -18,7 +18,7 @@ public sealed record PlanGroup(PlanTopic? Topic, IReadOnlyList<CoursePlan> Plans
 /// <summary>Course code helpers.</summary>
 public static partial class CourseCodes
 {
-    /// <summary>Semester from an SDU-style course code suffix, e.g. "T510046101-1-E26" → "E26" (E = autumn, F = spring).</summary>
+    /// <summary>Semester from a course code suffix, e.g. "T510046101-1-E26" → "E26" (E = autumn, F = spring).</summary>
     public static string? Semester(string? courseCode) =>
         courseCode is not null && SemesterSuffix().Match(courseCode) is { Success: true } m ? m.Groups[1].Value : null;
 

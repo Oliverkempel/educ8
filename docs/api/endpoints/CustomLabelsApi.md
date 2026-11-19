@@ -1,6 +1,6 @@
 # CustomLabelsApi
 
-> Auto-generated from https://sdu.itslearning.com/restapi/help — do not hand-edit; regenerate instead.
+> Auto-generated from an itslearning site's /restapi/help — do not hand-edit; regenerate instead.
 
 **Overview:** Controller to handle api calls from the custom labels page.
 

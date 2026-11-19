@@ -46,7 +46,7 @@ public sealed class AppTestHost : IDisposable
     }
 
     public static string Course(int id, string title, string? code, string? updated, int notifications = 0, int bulletins = 0, string? teachers = null) =>
-        $$"""{"CourseId":{{id}},"Title":"{{title}}","CourseCode":{{(code is null ? "null" : $"\"{code}\"")}},"LastUpdatedUtc":{{(updated is null ? "null" : $"\"{updated}\"")}},"NewNotificationsCount":{{notifications}},"NewBulletinsCount":{{bulletins}},"CourseColor":"#408AB4","CourseFillColor":"#C4ECFF","Url":"https://sdu.itslearning.com/main.aspx?CourseID={{id}}","TeachersInCourse":[{{teachers ?? ""}}]}""";
+        $$"""{"CourseId":{{id}},"Title":"{{title}}","CourseCode":{{(code is null ? "null" : $"\"{code}\"")}},"LastUpdatedUtc":{{(updated is null ? "null" : $"\"{updated}\"")}},"NewNotificationsCount":{{notifications}},"NewBulletinsCount":{{bulletins}},"CourseColor":"#408AB4","CourseFillColor":"#C4ECFF","Url":"https://school.itslearning.com/main.aspx?CourseID={{id}}","TeachersInCourse":[{{teachers ?? ""}}]}""";
 
     public static string Teacher(string first, string last) => $$"""{"FirstName":"{{first}}","LastName":"{{last}}"}""";
 

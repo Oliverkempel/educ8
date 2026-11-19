@@ -60,7 +60,7 @@ public sealed class WriteToolTests : IAsyncLifetime
             ("GET", "/restapi/personal/assignments/4001/v1") => FakeItslearning.Json("""{"ElementId":4001,"Title":"Reflection","Deadline":"2026-11-25T22:59:00Z","IsSubmissionAfterDeadlineAllowed":false,"IsActive":true,"SubmissionType":"Individual","Files":[]}"""),
             ("GET", "/restapi/personal/assignments/4002/v1") => FakeItslearning.Json("""{"ElementId":4002,"Title":"Old one","Deadline":"2026-03-02T15:32:00Z","IsSubmissionAfterDeadlineAllowed":false,"IsActive":true,"Files":[]}"""),
             ("GET", var p) when p.Contains("/answers/persons/77/") => new HttpResponseMessage(HttpStatusCode.InternalServerError),
-            ("GET", "/restapi/personal/sso/url/v1") => FakeItslearning.Json("""{"Url":"https://sdu.itslearning.com/sso-login"}"""),
+            ("GET", "/restapi/personal/sso/url/v1") => FakeItslearning.Json("""{"Url":"https://school.itslearning.com/sso-login"}"""),
             ("POST", "/restapi/personal/fileupload/temp/v1") => FakeItslearning.Json("""{"FileRepoId":"repo-1","SignedFileRepoId":"sig","Name":"answer.txt","MimeType":"text/plain","SourceType":1,"IsTemplate":false}"""),
             ("POST", "/restapi/personal/assignments/4001/answers/v1") => FakeItslearning.Json("""{"AnswerId":999}"""),
             _ => new HttpResponseMessage(HttpStatusCode.NotFound),
@@ -69,7 +69,7 @@ public sealed class WriteToolTests : IAsyncLifetime
         {
             var u = req.RequestUri!;
             if (u.AbsolutePath == "/sso-login" || u.AbsolutePath.Contains("ViewLearningToolElement"))
-                return Fixtures.Html(Fixtures.Read("view_page_2266446.html"), "https://sdu.itslearning.com/LearningToolElement/ViewLearningToolElement.aspx");
+                return Fixtures.Html(Fixtures.Read("view_page_2266446.html"), "https://school.itslearning.com/LearningToolElement/ViewLearningToolElement.aspx");
             if (u.Host == "platform.itslearning.com")
                 return Fixtures.Html(Fixtures.Read("assignment_unsubmitted.html"), "https://assignment.itslearning.com/view.aspx");
             return new HttpResponseMessage(HttpStatusCode.NotFound);

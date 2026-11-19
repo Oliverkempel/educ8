@@ -1,5 +1,5 @@
 import re, html, sys, os, time, urllib.request, urllib.parse
-base = 'https://sdu.itslearning.com'
+base = os.environ.get('ITSLEARNING_BASE_URL', 'https://school.itslearning.com').rstrip('/')  # your school's itslearning site
 root = sys.argv[1]
 def get(url, path):
     if os.path.exists(path) and os.path.getsize(path) > 0: return open(path, encoding='utf-8').read()

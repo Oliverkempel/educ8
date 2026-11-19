@@ -1,6 +1,6 @@
 # educ8-mcp
 
-MCP server for the itslearning LMS (first target: https://sdu.itslearning.com). Later part of a cross-platform desktop itslearning app (not built yet; see the architecture doc).
+MCP server and native desktop app (Linux now; Windows/macOS planned) for the itslearning LMS. The school's site is configured, never hard-coded.
 
 Project docs live in [docs/](docs/README.md). Before working here, read `docs/README.md`, `docs/design/architecture.md`, `docs/api/README.md` and `docs/api/live-findings.md`. Live findings are verified behaviour and win over the help-page docs. For endpoint details, grep `docs/api/endpoints/` and `docs/api/models.md` instead of fetching the help site.
 
@@ -23,6 +23,6 @@ Gotcha: register tools with `WithTools(IEnumerable<Type>)`. A `Type[]` binds to 
 
 ## Conventions
 
-- Auth: itslearning OAuth2 authorization code flow with our client ID (from config/env, never hard-coded). Users sign in through Microsoft (SDU Office 365). Access tokens last 5 minutes and refresh tokens rotate, so refresh only through `TokenManager` (it uses a cross-process lock).
+- Auth: itslearning OAuth2 authorization code flow with our client ID (from config/env, never hard-coded). Users sign in through their school's login (e.g. Microsoft). Access tokens last 5 minutes and refresh tokens rotate, so refresh only through `TokenManager` (it uses a cross-process lock).
 - Never log tokens, auth codes, SSO URLs or signed file URLs.
 - Keep `docs/` current: decisions in `docs/notes/decisions.md`, open questions in `docs/notes/open-questions.md`, live-API findings in `docs/api/live-findings.md`.

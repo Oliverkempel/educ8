@@ -24,7 +24,7 @@ public sealed class CourseContentToolTests : IAsyncLifetime
         """;
 
     private static string Resource(int id, string type, int tool, string title) =>
-        $$"""{"CourseCode":"T510046101-1-E26","CourseTitle":"OSDS, (E26)","ElementId":{{id}},"ElementType":"{{type}}","LearningToolId":{{tool}},"Title":"{{title}}","CourseId":50352,"Url":"https://sdu.itslearning.com/main.aspx?CourseID=50352&ElementID={{id}}","Active":true,"Path":" / OSDS, (E26) / General"}""";
+        $$"""{"CourseCode":"T510046101-1-E26","CourseTitle":"OSDS, (E26)","ElementId":{{id}},"ElementType":"{{type}}","LearningToolId":{{tool}},"Title":"{{title}}","CourseId":50352,"Url":"https://school.itslearning.com/main.aspx?CourseID=50352&ElementID={{id}}","Active":true,"Path":" / OSDS, (E26) / General"}""";
 
     public async Task InitializeAsync()
     {
@@ -47,7 +47,7 @@ public sealed class CourseContentToolTests : IAsyncLifetime
             "/restapi/personal/courses/50352/tasks/v1" => FakeItslearning.Json("""{"EntityArray":[{"TaskId":1,"ElementId":2425693,"ElementType":"LearningToolElement","LearningToolId":5002,"Title":"Demo Exam","Status":"NotStarted","Deadline":null}],"Total":1}"""),
             "/restapi/personal/courses/50352/bulletins/v1" => new HttpResponseMessage(HttpStatusCode.InternalServerError),
             "/restapi/personal/courses/50352/calendarevents/v1" => FakeItslearning.Json("""
-                {"EntityArray":[{"Id":1284442,"FromDate":"2026-11-23T07:00:00Z","ToDate":"2026-11-23T15:00:00Z","EventTitle":"Project work - Odense TEK","ImportDescription":"Book selv projektlokaler","CourseId":50352,"LocationTitle":"OSDS"}],"Total":1}
+                {"EntityArray":[{"Id":1284442,"FromDate":"2026-11-23T07:00:00Z","ToDate":"2026-11-23T15:00:00Z","EventTitle":"Project work - Campus TEK","ImportDescription":"Book selv projektlokaler","CourseId":50352,"LocationTitle":"OSDS"}],"Total":1}
                 """),
             "/restapi/personal/courses/50352/stream/v1" => FakeItslearning.Json("""
                 {"EntityArray":[{"NotificationId":1,"Text":"Teacher added Week 11 slides.pdf","LocationTitle":"OSDS","LocationId":50352,"PublishedDate":"2026-11-17T10:00:00Z","ElementId":555,"ElementType":"LearningToolElement","LearningToolId":5009,"ElementsCount":1}],"Total":1}
@@ -56,7 +56,7 @@ public sealed class CourseContentToolTests : IAsyncLifetime
             "/restapi/personal/courses/resources/2371739/v1" => FakeItslearning.Json(Resource(2371739, "LearningToolElement", 5010, "Linux kernel article")),
             "/restapi/personal/courses/resources/2371764/v1" => FakeItslearning.Json(Resource(2371764, "LearningToolElement", 5009, "OS&Linux.pdf")),
             "/restapi/personal/courses/resources/2262801/v1" => FakeItslearning.Json(Resource(2262801, "Folder", 0, "General Course Information")),
-            "/restapi/personal/sso/url/v1" => FakeItslearning.Json("""{"Url":"https://sdu.itslearning.com/sso-login?x=1"}"""),
+            "/restapi/personal/sso/url/v1" => FakeItslearning.Json("""{"Url":"https://school.itslearning.com/sso-login?x=1"}"""),
             _ => new HttpResponseMessage(HttpStatusCode.NotFound),
         };
         // The web UI: the SSO link lands on the element view; its iframe opens the tool page for that element.
@@ -64,7 +64,7 @@ public sealed class CourseContentToolTests : IAsyncLifetime
         _t.Web.Respond = (req, _) =>
         {
             var u = req.RequestUri!;
-            if (u.AbsolutePath == "/sso-login") return Fixtures.Html(Fixtures.Read("view_page_2266446.html"), "https://sdu.itslearning.com/LearningToolElement/ViewLearningToolElement.aspx?LearningToolElementId=" + lastElement);
+            if (u.AbsolutePath == "/sso-login") return Fixtures.Html(Fixtures.Read("view_page_2266446.html"), "https://school.itslearning.com/LearningToolElement/ViewLearningToolElement.aspx?LearningToolElementId=" + lastElement);
             if (u.AbsolutePath.Contains("ViewLearningToolElement")) return Fixtures.Html(Fixtures.Read("view_page_2266446.html"), u.ToString());
             if (u.Host == "platform.itslearning.com")
                 return lastElement == 2371739
@@ -123,7 +123,7 @@ public sealed class CourseContentToolTests : IAsyncLifetime
         Assert.Contains("## Latest announcements\n\n_(couldn't load this part right now)_", text);
         Assert.Contains("## Recent changes (last 14 days)\n\n- Tue 2026-11-17 10:00 · Teacher added Week 11 slides.pdf · File · element 555 · read_file", text);
         // Regression: a project day that exists only in the calendar (no lesson plan) must appear, and plans must not pass for the timetable.
-        Assert.Contains("## Upcoming calendar events (next 7 days)\n\n- Mon 2026-11-23 07:00–15:00 · **Project work - Odense TEK** · Book selv projektlokaler · event 1284442", text);
+        Assert.Contains("## Upcoming calendar events (next 7 days)\n\n- Mon 2026-11-23 07:00–15:00 · **Project work - Campus TEK** · Book selv projektlokaler · event 1284442", text);
         Assert.Contains("they are not the full timetable", text);
         Assert.Contains("| 2266446 | Page | Course description | read |", text);
     }
@@ -153,7 +153,7 @@ public sealed class CourseContentToolTests : IAsyncLifetime
         var text = await Call("read_material", new() { ["elementId"] = 2266446 });
         Assert.Contains("# Course description", text);
         Assert.Contains("Page · element 2266446 · OSDS, (E26) (course 50352) · location: General", text);
-        Assert.Contains("[Course description](https://odin.sdu.dk/sitecore/index.php?a=searchfagbesk&bbcourseid=T510046101-1-E26&lang=en)", text);
+        Assert.Contains("[Course description](https://odin.example.edu/sitecore/index.php?a=searchfagbesk&bbcourseid=T510046101-1-E26&lang=en)", text);
     }
 
     [Fact]

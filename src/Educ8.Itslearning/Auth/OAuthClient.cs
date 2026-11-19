@@ -10,7 +10,7 @@ public sealed class OAuthClient(HttpClient http, IOptions<ItslearningOptions> op
 {
     private readonly ItslearningOptions _options = options.Value;
 
-    /// <summary>The URL the user opens to sign in (itslearning login page → SDU Office 365 → back with a code).</summary>
+    /// <summary>The URL the user opens to sign in (itslearning login page → the school's Microsoft login → back with a code).</summary>
     public Uri BuildAuthorizeUrl(string state)
     {
         var query = string.Join('&',
@@ -19,7 +19,7 @@ public sealed class OAuthClient(HttpClient http, IOptions<ItslearningOptions> op
             Pair("response_type", "code"),
             Pair("scope", _options.Scope),
             Pair("redirect_uri", _options.RedirectUri));
-        return new Uri(_options.BaseUrl, "oauth2/authorize.aspx?" + query);
+        return new Uri(_options.Site, "oauth2/authorize.aspx?" + query);
 
         static string Pair(string k, string v) => $"{k}={Uri.EscapeDataString(v)}";
     }
@@ -43,7 +43,7 @@ public sealed class OAuthClient(HttpClient http, IOptions<ItslearningOptions> op
 
     private async Task<TokenSet> RequestAsync(Dictionary<string, string> form, CancellationToken ct)
     {
-        using var response = await http.PostAsync(new Uri(_options.BaseUrl, "restapi/oauth2/token"), new FormUrlEncodedContent(form), ct).ConfigureAwait(false);
+        using var response = await http.PostAsync(new Uri(_options.Site, "restapi/oauth2/token"), new FormUrlEncodedContent(form), ct).ConfigureAwait(false);
         if (!response.IsSuccessStatusCode)
         {
             var body = await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false);

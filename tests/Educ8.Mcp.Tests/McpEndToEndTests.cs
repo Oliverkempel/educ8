@@ -77,7 +77,7 @@ public sealed class McpEndToEndTests : IAsyncLifetime
         Assert.Contains("login", text);
 
         (text, _) = await Call("auth_status");
-        Assert.Contains("Not logged in to sdu.itslearning.com", text);
+        Assert.Contains("Not logged in to school.itslearning.com", text);
     }
 
     [Fact]
