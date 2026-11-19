@@ -11,6 +11,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Educ8.Itslearning\Educ8.Itslearning.csproj" />
     <ProjectReference Include="..\Educ8.Documents\Educ8.Documents.csproj" />
+    <ProjectReference Include="..\Educ8.Mcp\Educ8.Mcp.csproj" />
   </ItemGroup>
 
   <ItemGroup>

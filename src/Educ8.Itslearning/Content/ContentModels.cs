@@ -31,3 +31,10 @@ public sealed record DownloadedFile(string FileName, string? ContentType, byte[]
 
 /// <summary>The content of an element could not be read through the web view (layout changed, no access, unsupported tool...).</summary>
 public sealed class ContentUnavailableException(string message) : Exception(message);
+
+/// <summary>Downloads course files to disk (implemented by <see cref="LearningToolContentReader"/>).</summary>
+public interface ICourseFileSource
+{
+    /// <summary>Saves File element <paramref name="elementId"/> into <paramref name="directory"/> and returns its path.</summary>
+    Task<string> SaveFileAsync(int elementId, string directory, CancellationToken ct = default);
+}

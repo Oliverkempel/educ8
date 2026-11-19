@@ -10,8 +10,15 @@ using Educ8.Itslearning.Models;
 namespace Educ8.App.Core.ViewModels;
 
 /// <summary>Start page: all the user's courses as cards, with search and a current-semester filter.</summary>
-public sealed partial class CoursesViewModel(CourseCatalog catalog, TimeProvider time, IOpenUrl openUrl) : ObservableObject
+public sealed partial class CoursesViewModel(CourseCatalog catalog, TimeProvider time, IOpenUrl openUrl, CoursePageFactory pages) : ObservableObject
 {
+    /// <summary>Raised with the course page when a card is opened; the platform shows it (pushes a page).</summary>
+    public event EventHandler<CourseViewModel>? CourseOpened;
+
+    [RelayCommand]
+    private void OpenCourse(CourseCardViewModel card) =>
+        CourseOpened?.Invoke(this, pages.Course(card.CourseId, card.Title, card.Code, card.Url));
+
     /// <summary>Courses without a semester code count as current when active within this many days.</summary>
     internal const int RecentDays = 120;
 

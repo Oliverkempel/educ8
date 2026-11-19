@@ -91,11 +91,14 @@ internal static class CourseOverviewFormatter
                 sb.Append('\n');
                 if (o.PlanMaterials.TryGetValue(p.PlanId, out var materials))
                 {
-                    if (materials.Items.Count == 0) sb.Append($"  - (material folder {materials.FolderId} is empty)\n");
+                    if (materials.Items.Count == 0)
+                        sb.Append(materials.FolderId is { } empty ? $"  - (material folder {empty} is empty)\n" : "  - (no material attached to this plan)\n");
                     foreach (var r in materials.Items.Take(MaxPlanItems))
                         sb.Append($"  - {ResourceFormatter.KindLabel(r.Kind, r.LearningToolId)}: {Markdown.Cell(r.Title)} · element {r.ElementId} · {ResourceFormatter.NextStep(r.Kind)}\n");
                     if (materials.Items.Count > MaxPlanItems)
-                        sb.Append($"  - … {materials.Items.Count - MaxPlanItems} more: browse folder {materials.FolderId}\n");
+                        sb.Append(materials.FolderId is { } folder
+                            ? $"  - … {materials.Items.Count - MaxPlanItems} more: browse folder {folder}\n"
+                            : $"  - … {materials.Items.Count - MaxPlanItems} more attached to this plan\n");
                 }
             }
 

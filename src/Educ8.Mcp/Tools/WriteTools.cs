@@ -89,7 +89,7 @@ public static class WriteTools
     internal static void EnsureAllowed(Educ8McpOptions options)
     {
         if (!options.AllowWriteActions)
-            throw new McpException("Write actions are disabled. The user can enable them with `educ8-mcp write-actions on` (or \"AllowWriteActions\": true in config.json) and restart the MCP server.");
+            throw new McpException("Write actions are turned off. The user can allow them in the Educ8 desktop app (MCP page) or with `educ8-mcp write-actions on`.");
     }
 
     /// <summary>

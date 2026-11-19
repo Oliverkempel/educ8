@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Educ8
+GenericName=itslearning client
+Comment=Your itslearning courses, plans and calendar
+Exec=educ8
+Icon=io.github.educ8.Educ8
+Terminal=false
+Categories=Education;GTK;
+Keywords=itslearning;course;calendar;SDU;
+StartupNotify=true

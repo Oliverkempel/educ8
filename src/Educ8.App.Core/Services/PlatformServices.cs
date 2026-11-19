@@ -11,3 +11,9 @@ public interface IOpenUrl
 {
     void Open(Uri url);
 }
+
+/// <summary>Opens a local file in the user's default application for its type.</summary>
+public interface IOpenFile
+{
+    void Open(string path);
+}

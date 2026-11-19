@@ -25,6 +25,7 @@ public enum AppPage
 {
     Courses,
     Calendar,
+    Mcp,
 }
 
 /// <summary>A sidebar entry.</summary>
@@ -43,7 +44,7 @@ public sealed partial class ShellViewModel : ObservableObject
 
     public ShellViewModel(
         TokenManager tokens, Func<ItslearningClient> client, IUiDispatcher dispatcher, CourseCatalog catalog,
-        LoginViewModel login, CoursesViewModel courses, CalendarViewModel calendar)
+        LoginViewModel login, CoursesViewModel courses, CalendarViewModel calendar, McpViewModel mcp)
     {
         _tokens = tokens;
         _client = client;
@@ -52,17 +53,20 @@ public sealed partial class ShellViewModel : ObservableObject
         Login = login;
         Courses = courses;
         Calendar = calendar;
+        Mcp = mcp;
         _tokens.SessionChanged += (_, _) => _dispatcher.Post(() => _ = InitializeAsync());
     }
 
     public LoginViewModel Login { get; }
     public CoursesViewModel Courses { get; }
     public CalendarViewModel Calendar { get; }
+    public McpViewModel Mcp { get; }
 
     public IReadOnlyList<NavItem> NavigationItems { get; } =
     [
         new(AppPage.Courses, Strings.NavCourses, AppIcon.Courses),
         new(AppPage.Calendar, Strings.NavCalendar, AppIcon.Calendar),
+        new(AppPage.Mcp, Strings.NavMcp, AppIcon.Mcp),
     ];
 
     [ObservableProperty]
@@ -112,7 +116,11 @@ public sealed partial class ShellViewModel : ObservableObject
     [RelayCommand]
     private Task SignOutAsync() => _tokens.SignOutAsync(); // SessionChanged → InitializeAsync → SignedOut
 
-    partial void OnCurrentPageChanged(AppPage value) => _ = ActivateCurrentPageAsync();
+    partial void OnCurrentPageChanged(AppPage value)
+    {
+        if (value != AppPage.Mcp) Mcp.StopAutoRefresh();
+        _ = ActivateCurrentPageAsync();
+    }
 
     /// <summary>Loads the shown page's data the first time it's shown.</summary>
     private Task ActivateCurrentPageAsync() => State != ShellState.SignedIn
@@ -121,8 +129,15 @@ public sealed partial class ShellViewModel : ObservableObject
         {
             AppPage.Courses => Courses.EnsureLoadedAsync(),
             AppPage.Calendar => Calendar.EnsureLoadedAsync(),
+            AppPage.Mcp => StartMcpRefresh(),
             _ => Task.CompletedTask,
         };
+
+    private Task StartMcpRefresh()
+    {
+        Mcp.StartAutoRefresh();
+        return Task.CompletedTask;
+    }
 
     private void SignedOut()
     {

@@ -38,6 +38,51 @@ public static class Texts
         };
     }
 
+    /// <summary>"Today, 14:00", "Yesterday, 09:12", "Tomorrow, 10:00", "Mon 16 Nov, 10:00" (year added when not this year).</summary>
+    public static string Date(DateTimeOffset value, DateTimeOffset now, TimeZoneInfo zone)
+    {
+        var local = TimeZoneInfo.ConvertTime(value, zone);
+        var today = TimeZoneInfo.ConvertTime(now, zone).Date;
+        var time = local.ToString("t", CultureInfo.CurrentCulture);
+        var day = (local.Date - today).Days switch
+        {
+            0 => Strings.DayToday,
+            -1 => Strings.DayYesterday,
+            1 => Strings.DayTomorrow,
+            _ => local.ToString(local.Year == today.Year ? "ddd d MMM" : "ddd d MMM yyyy", CultureInfo.CurrentCulture),
+        };
+        return string.Format(CultureInfo.CurrentCulture, Strings.DateWithTime, day, time);
+    }
+
+    /// <summary>"Tue 17 Nov, 14:00–16:00", or just the day for all-day plans.</summary>
+    public static string Span(DateTimeOffset? start, DateTimeOffset? end, DateTimeOffset now, TimeZoneInfo zone)
+    {
+        if (start is null) return "";
+        if (end is null || end <= start) return Date(start.Value, now, zone);
+        var range = TimeRange(start.Value, end.Value, zone);
+        var local = TimeZoneInfo.ConvertTime(start.Value, zone);
+        var today = TimeZoneInfo.ConvertTime(now, zone).Date;
+        var day = local.ToString(local.Year == today.Year ? "ddd d MMM" : "ddd d MMM yyyy", CultureInfo.CurrentCulture);
+        return string.Format(CultureInfo.CurrentCulture, Strings.DateWithTime, day, range);
+    }
+
+    /// <summary>A friendly MCP client name: "Claude Desktop", "Claude Code", the client's own name, or "MCP client".</summary>
+    public static string McpClient(string? name) => name?.ToLowerInvariant() switch
+    {
+        null or "" => Strings.McpClientUnknown,
+        "claude-ai" or "claude desktop" => "Claude Desktop",
+        "claude-code" => "Claude Code",
+        _ => name,
+    };
+
+    /// <summary>"0.4 s", "12 s", "250 ms".</summary>
+    public static string Duration(long milliseconds) => milliseconds switch
+    {
+        < 1000 => string.Format(CultureInfo.CurrentCulture, "{0} ms", milliseconds),
+        < 10_000 => string.Format(CultureInfo.CurrentCulture, "{0:0.0} s", milliseconds / 1000.0),
+        _ => string.Format(CultureInfo.CurrentCulture, "{0} s", milliseconds / 1000),
+    };
+
     /// <summary>"12:00–14:00", "All day", or a span with dates.</summary>
     public static string TimeRange(DateTimeOffset start, DateTimeOffset end, TimeZoneInfo zone)
     {

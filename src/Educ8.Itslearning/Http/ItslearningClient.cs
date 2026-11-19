@@ -71,6 +71,24 @@ public sealed class ItslearningClient(HttpClient http)
         return plans.OrderBy(p => p.Start ?? DateTimeOffset.MaxValue).ThenBy(p => p.PlanName).ToList();
     }
 
+    /// <summary>One lesson plan with its elements (the plan's material and activities). Undocumented endpoint; see <see cref="CoursePlan"/>.</summary>
+    public Task<CoursePlan> GetPlanAsync(int courseId, int planId, CancellationToken ct = default) =>
+        GetAsync<CoursePlan>($"restapi/personal/course/{courseId}/plans/{planId}/v2?ChildId=0", ct);
+
+    /// <summary>The course's planner topics (undocumented; itslearning's plan page uses it). Plans without a topic aren't counted here.</summary>
+    public Task<List<PlanTopic>> GetPlanTopicsAsync(int courseId, CancellationToken ct = default) =>
+        GetAsync<List<PlanTopic>>($"restapi/personal/course/{courseId}/plans/topics/v1?ChildId=0&FilterPersonId=0", ct);
+
+    /// <summary>
+    /// All plans in a planner topic, with their elements (undocumented). <paramref name="topicId"/> 0 = plans without a topic.
+    /// </summary>
+    public Task<List<CoursePlan>> GetTopicPlansAsync(int courseId, int topicId, CancellationToken ct = default) =>
+        ToListAsync(PageAllAsync((i, c) => GetAsync<EntityList<CoursePlan>>(
+            $"restapi/personal/course/{courseId}/plans/topics/{topicId}/all/v1?PageIndex={i}&PageSize={MaxPageSize}&ChildId=0", c), ct), ct);
+
+    /// <summary>The site root (e.g. <c>https://sdu.itslearning.com/</c>), for turning site-relative links absolute.</summary>
+    public Uri? BaseAddress => http.BaseAddress;
+
     /// <summary>The user's tasks across all courses. <paramref name="status"/>: "Active" (default) or "Completed".</summary>
     public Task<List<CourseTask>> GetMyTasksAsync(string status = "Active", CancellationToken ct = default) =>
         ToListAsync(PageAllAsync((i, c) => GetAsync<EntityList<CourseTask>>(

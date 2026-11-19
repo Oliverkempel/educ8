@@ -177,4 +177,26 @@ public sealed class CourseContentToolTests : IAsyncLifetime
         var text = await Call("get_course_overview", new() { ["courseId"] = 50352 });
         Assert.Contains("**Lecture** (topic: 11: Web Technologies): Read **chapter 3**\n  - File: Week 11 slides.pdf · element 555 · read_file\n", text);
     }
+
+    [Fact]
+    public async Task Overview_reads_material_from_the_plan_itself()
+    {
+        // Plan "Preparation" has no topic folder; its elements come from the plan endpoint (shape as live, synthetic content).
+        var http = _t.Http.Respond;
+        _t.Http.Respond = (req, body) => req.RequestUri!.AbsolutePath == "/restapi/personal/course/50352/plans/1/v2"
+            ? FakeItslearning.Json("""
+                {"id":1,"title":"Preparation","url":"/plans/courses/50352/plan/1","elements":[
+                  {"id":901,"title":"Reading guide.pdf","url":"/LearningToolElement/ViewLearningToolElement.aspx?LearningToolElementId=901&IsPlanContext=True","type":"LearningToolElement","typeName":"File","learningToolId":5009,"isResource":true,"isActive":true,"isFolder":false},
+                  {"id":902,"title":"Hidden draft","type":"LearningToolElement","learningToolId":5,"isResource":true,"isActive":false,"isFolder":false}
+                ],"learningObjectives":[],"customFields":null}
+                """)
+            : http(req, body);
+
+        var text = await Call("get_course_overview", new() { ["courseId"] = 50352 });
+        Assert.Contains("**Preparation**", text);
+        Assert.Contains("  - File: Reading guide.pdf · element 901 · read_file\n", text);
+        Assert.DoesNotContain("Hidden draft", text);
+        // Plan "Lecture" has no plan data here (404), so the topic-folder fallback still finds its material.
+        Assert.Contains("  - File: Week 11 slides.pdf · element 555 · read_file\n", text);
+    }
 }

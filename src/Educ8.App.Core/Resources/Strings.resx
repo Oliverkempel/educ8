@@ -57,6 +57,52 @@
   <data name="EventLessonPlan" xml:space="preserve"><value>Lesson plan</value></data>
   <data name="EventMaterial" xml:space="preserve"><value>Material</value></data>
   <data name="EventLinkedMaterial" xml:space="preserve"><value>Linked material</value></data>
+  <data name="OpenFileFailed" xml:space="preserve"><value>Couldn't download the file ({0}). Opened it in itslearning instead.</value></data>
+  <data name="Downloading" xml:space="preserve"><value>Downloading…</value></data>
+  <data name="OpenFile" xml:space="preserve"><value>Open with the default app</value></data>
+  <data name="CourseOverview" xml:space="preserve"><value>Overview</value></data>
+  <data name="CourseResources" xml:space="preserve"><value>Resources</value></data>
+  <data name="CourseAnnouncements" xml:space="preserve"><value>Announcements</value></data>
+  <data name="CoursePlans" xml:space="preserve"><value>Lesson plans</value></data>
+  <data name="CourseTasks" xml:space="preserve"><value>Open tasks</value></data>
+  <data name="CourseChanges" xml:space="preserve"><value>Recent changes</value></data>
+  <data name="CourseNoAnnouncements" xml:space="preserve"><value>No announcements.</value></data>
+  <data name="CourseNoPlans" xml:space="preserve"><value>No lesson plans from last week to three weeks ahead.</value></data>
+  <data name="CourseNoTasks" xml:space="preserve"><value>No open tasks.</value></data>
+  <data name="CourseNoChanges" xml:space="preserve"><value>Nothing new in the last two weeks.</value></data>
+  <data name="FolderEmpty" xml:space="preserve"><value>This folder is empty.</value></data>
+  <data name="DueOn" xml:space="preserve"><value>Due {0}</value></data>
+  <data name="DayToday" xml:space="preserve"><value>Today</value></data>
+  <data name="DayYesterday" xml:space="preserve"><value>Yesterday</value></data>
+  <data name="DayTomorrow" xml:space="preserve"><value>Tomorrow</value></data>
+  <data name="DateWithTime" xml:space="preserve"><value>{0}, {1}</value></data>
+  <data name="MoreItems" xml:space="preserve"><value>{0} items</value></data>
+  <data name="Pinned" xml:space="preserve"><value>Pinned</value></data>
+  <data name="CourseOpenHint" xml:space="preserve"><value>Open the course page</value></data>
+  <data name="CoursePlansTab" xml:space="preserve"><value>Plans</value></data>
+  <data name="PlanNoDate" xml:space="preserve"><value>No date</value></data>
+  <data name="CourseNoPlansAtAll" xml:space="preserve"><value>This course has no plans.</value></data>
+  <data name="NavMcp" xml:space="preserve"><value>MCP server</value></data>
+  <data name="McpIntro" xml:space="preserve"><value>AI apps like Claude Desktop start the Educ8 MCP server themselves. Changes here apply right away, also to servers that are already running.</value></data>
+  <data name="McpStatusTitle" xml:space="preserve"><value>Status</value></data>
+  <data name="McpNotRunning" xml:space="preserve"><value>No AI app is using Educ8 right now.</value></data>
+  <data name="McpRunningOne" xml:space="preserve"><value>1 AI app is using Educ8.</value></data>
+  <data name="McpRunningMany" xml:space="preserve"><value>{0} AI apps are using Educ8.</value></data>
+  <data name="McpClientUnknown" xml:space="preserve"><value>MCP client</value></data>
+  <data name="McpRunningSince" xml:space="preserve"><value>Running since {0}</value></data>
+  <data name="McpCalls" xml:space="preserve"><value>{0} calls</value></data>
+  <data name="McpCallsOne" xml:space="preserve"><value>1 call</value></data>
+  <data name="McpLastCall" xml:space="preserve"><value>last {0}</value></data>
+  <data name="McpPermissionsTitle" xml:space="preserve"><value>Permissions</value></data>
+  <data name="McpWriteActions" xml:space="preserve"><value>Allow changes in itslearning</value></data>
+  <data name="McpWriteHint" xml:space="preserve"><value>Lets the AI use tools that change things, like handing in assignments. It always shows a preview first.</value></data>
+  <data name="McpWriteOverridden" xml:space="preserve"><value>Set by the EDUC8_ALLOW_WRITE_ACTIONS environment variable; this switch can't change it.</value></data>
+  <data name="McpToolsTitle" xml:space="preserve"><value>Tools</value></data>
+  <data name="McpToolsDescription" xml:space="preserve"><value>Turned-off tools are hidden from the AI.</value></data>
+  <data name="McpWriteToolsTitle" xml:space="preserve"><value>Tools that change itslearning</value></data>
+  <data name="McpActivityTitle" xml:space="preserve"><value>Recent activity</value></data>
+  <data name="McpNoActivity" xml:space="preserve"><value>No tool calls yet.</value></data>
+  <data name="McpBlocked" xml:space="preserve"><value>refused (turned off)</value></data>
   <data name="EventNoMaterial" xml:space="preserve"><value>No material found for this lesson.</value></data>
   <data name="SelectEventHint" xml:space="preserve"><value>Select an event to see its details.</value></data>
   <data name="KindFolder" xml:space="preserve"><value>Folder</value></data>

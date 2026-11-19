@@ -28,6 +28,14 @@ public enum AppIcon
     Activity,
     LearningPath,
     Other,
+    Announcement,
+    Task,
+    RecentChange,
+    Pinned,
+    Mcp,
+    CallOk,
+    CallFailed,
+    CallBlocked,
 }
 
 public static class AppIcons

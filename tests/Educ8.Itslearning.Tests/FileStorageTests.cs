@@ -75,4 +75,27 @@ public sealed class FileStorageTests : IDisposable
     [Fact]
     public void Missing_client_id_fails_validation() =>
         Assert.Throws<InvalidOperationException>(() => new ItslearningOptions { DataDirectory = _dir }.Validate());
+
+    [Theory]
+    [InlineData("Lecture 10.pdf", "Lecture 10.pdf")]
+    [InlineData("../../.bashrc", "bashrc")]
+    [InlineData("C:\\Users\\x\\notes.docx", "notes.docx")]
+    [InlineData("/etc/passwd", "passwd")]
+    [InlineData("a\u0001b.txt", "a_b.txt")]
+    [InlineData("", "file-42")]
+    [InlineData(null, "file-42")]
+    public void Downloaded_file_names_cannot_escape_the_folder(string? name, string expected) =>
+        Assert.Equal(expected, Educ8.Itslearning.Content.LearningToolContentReader.SafeFileName(name, 42));
+
+    [Fact]
+    public void Data_directory_inside_a_flatpak_is_the_real_one_shared_with_the_mcp_server()
+    {
+        var env = new Dictionary<string, string?> { ["FLATPAK_ID"] = "io.github.educ8.Educ8", ["HOME"] = "/home/someone" };
+        Assert.Equal("/home/someone/.local/share/Educ8", Educ8Paths.DataDirectoryFor(env.GetValueOrDefault));
+
+        env[Educ8Paths.DataDirectoryEnvVar] = "/tmp/elsewhere";
+        Assert.Equal("/tmp/elsewhere", Educ8Paths.DataDirectoryFor(env.GetValueOrDefault));
+
+        Assert.EndsWith("Educ8", Educ8Paths.DataDirectoryFor(_ => null));
+    }
 }

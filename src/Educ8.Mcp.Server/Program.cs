@@ -2,6 +2,7 @@ using Educ8.Itslearning;
 using Educ8.Itslearning.Auth;
 using Educ8.Itslearning.Http;
 using Educ8.Mcp;
+using Educ8.Mcp.Control;
 using Educ8.Mcp.Server;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -23,6 +24,7 @@ try
         "write-actions" => Cli.WriteActions(args.Skip(1).FirstOrDefault()),
         "register-url-handler" => UrlSchemeHandler.Register(),
         "unregister-url-handler" => UrlSchemeHandler.Unregister(),
+        "version" or "--version" or "-v" => PrintVersion(),
         "help" or "--help" or "-h" => Usage(0),
         _ => Usage(1),
     };
@@ -42,16 +44,31 @@ static async Task<int> Serve()
     builder.Logging.AddFilter("System.Net.Http.HttpClient", LogLevel.Warning); // request URLs can contain search text
     builder.Services.AddItslearning(options);
     var mcpOptions = Educ8McpOptions.Load(options.DataDirectory);
+    // Status and activity for the desktop app's MCP page (files in <data dir>/mcp; nothing leaves this machine).
+    var registry = new McpServerRegistry(options.DataDirectory);
+    builder.Services.AddSingleton(registry);
+    builder.Services.AddSingleton(new McpActivityLog(options.DataDirectory));
+    builder.Services.AddSingleton<IMcpActivitySink, McpActivityRecorder>();
     builder.Services
-        .AddMcpServer(o => o.ServerInfo = new() { Name = "educ8-itslearning", Version = typeof(Program).Assembly.GetName().Version?.ToString(3) ?? "0.1.0" })
+        .AddMcpServer(o => o.ServerInfo = new() { Name = "educ8-itslearning", Version = Educ8Version.Of(typeof(Program).Assembly) })
         .WithStdioServerTransport()
         .AddEduc8Tools(mcpOptions);
     var app = builder.Build();
+    registry.Register(DateTimeOffset.UtcNow);
+    using var watcher = new McpSettingsWatcher(mcpOptions, app.Services.GetRequiredService<McpSessionTracker>(), options.DataDirectory,
+        app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("Educ8.Settings"));
     app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("Educ8").LogInformation(
         mcpOptions.AllowWriteActions
             ? "Write actions are ENABLED (submitting assignments etc.)."
             : "Write actions are disabled (read-only). Enable with `educ8-mcp write-actions on`.");
-    await app.RunAsync();
+    try
+    {
+        await app.RunAsync();
+    }
+    finally
+    {
+        registry.Unregister();
+    }
     return 0;
 }
 
@@ -61,6 +78,12 @@ static ServiceProvider BuildServices()
     services.AddLogging(b => b.AddConsole(o => o.LogToStandardErrorThreshold = LogLevel.Trace).SetMinimumLevel(LogLevel.Warning));
     services.AddItslearning(ItslearningSettingsLoader.Load());
     return services.BuildServiceProvider();
+}
+
+static int PrintVersion()
+{
+    Console.WriteLine($"educ8-mcp {Educ8Version.Full(typeof(Program).Assembly)}");
+    return 0;
 }
 
 static int Usage(int code)
@@ -73,6 +96,7 @@ static int Usage(int code)
           educ8-mcp login [--no-browser]    Log in interactively (opens the browser; paste the final link or use the URL handler)
           educ8-mcp status                  Show who is logged in
           educ8-mcp logout                  Forget the stored session
+          educ8-mcp --version               Show the version
           educ8-mcp write-actions [on|off]  Show or change whether the AI may change things (submit assignments...). Off by default
           educ8-mcp register-url-handler    Let the browser hand itsl-itslearning:// links to educ8 (Linux, Windows)
           educ8-mcp unregister-url-handler  Remove that registration

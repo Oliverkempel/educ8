@@ -56,9 +56,9 @@ public sealed record CalendarEventDetails : CalendarEvent
     /// <summary>True when the description had HTML the API stripped; the web view shows more.</summary>
     public bool HasMoreContent { get; init; }
 
-    public IReadOnlyList<CalendarBooking> Bookings { get; init; } = [];
-    public IReadOnlyList<ElementLink> ElementLinks { get; init; } = [];
-    public IReadOnlyList<CalendarPlanLink> PlanLinks { get; init; } = [];
+    public IReadOnlyList<CalendarBooking> Bookings { get; init => field = value ?? []; } = []; // the API sends null for empty lists
+    public IReadOnlyList<ElementLink> ElementLinks { get; init => field = value ?? []; } = []; // the API sends null for empty lists
+    public IReadOnlyList<CalendarPlanLink> PlanLinks { get; init => field = value ?? []; } = []; // the API sends null for empty lists
 }
 
 public sealed record CalendarBooking

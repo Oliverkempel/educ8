@@ -1,6 +1,7 @@
 using System.Globalization;
 using Educ8.App.Core.Services;
 using Educ8.App.Core.ViewModels;
+using Educ8.Itslearning.Content;
 using Educ8.Itslearning.Tests;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -14,6 +15,9 @@ public sealed class AppTestHost : IDisposable
 {
     public TestServices T { get; } = new();
     public RecordingOpenUrl OpenUrl { get; } = new();
+    public RecordingOpenFile OpenFile { get; } = new();
+    public FakeCourseFileSource Files { get; } = new();
+    public string CacheDirectory { get; } = Path.Combine(Path.GetTempPath(), "educ8-tests", Guid.NewGuid().ToString("N"));
     public ServiceProvider Provider { get; }
 
     public AppTestHost()
@@ -21,7 +25,11 @@ public sealed class AppTestHost : IDisposable
         CultureInfo.CurrentCulture = CultureInfo.CurrentUICulture = new CultureInfo("en-GB");
         T.Services.AddSingleton<IUiDispatcher>(new ImmediateDispatcher());
         T.Services.AddSingleton<IOpenUrl>(OpenUrl);
+        T.Services.AddSingleton<IOpenFile>(OpenFile);
         T.Services.AddEduc8AppCore();
+        // Registered after AddEduc8AppCore, so these win: no web downloads, and a throwaway cache folder.
+        T.Services.AddSingleton<ICourseFileSource>(Files);
+        T.Services.AddSingleton(sp => new MaterialFiles(Files, OpenFile) { CacheDirectory = CacheDirectory });
         Provider = T.Build();
     }
 
@@ -34,6 +42,7 @@ public sealed class AppTestHost : IDisposable
     {
         Provider.Dispose();
         T.Dispose();
+        try { Directory.Delete(CacheDirectory, recursive: true); } catch (DirectoryNotFoundException) { }
     }
 
     public static string Course(int id, string title, string? code, string? updated, int notifications = 0, int bulletins = 0, string? teachers = null) =>
@@ -53,4 +62,27 @@ public sealed class RecordingOpenUrl : IOpenUrl
 {
     public List<Uri> Opened { get; } = [];
     public void Open(Uri url) => Opened.Add(url);
+}
+
+public sealed class RecordingOpenFile : IOpenFile
+{
+    public List<string> Opened { get; } = [];
+    public void Open(string path) => Opened.Add(path);
+}
+
+/// <summary>Writes a small file named after the element instead of downloading; can be told to fail.</summary>
+public sealed class FakeCourseFileSource : ICourseFileSource
+{
+    public List<int> Downloads { get; } = [];
+    public Exception? Fail { get; set; }
+
+    public async Task<string> SaveFileAsync(int elementId, string directory, CancellationToken ct = default)
+    {
+        Downloads.Add(elementId);
+        if (Fail is not null) throw Fail;
+        Directory.CreateDirectory(directory);
+        var path = Path.Combine(directory, $"element-{elementId}.pdf");
+        await File.WriteAllTextAsync(path, "%PDF-1.4", ct);
+        return path;
+    }
 }

@@ -28,7 +28,7 @@ public sealed record PersonCourse
     /// <summary>Lighter background variant of <see cref="CourseColor"/>, e.g. "#C4ECFF".</summary>
     public string? CourseFillColor { get; init; }
 
-    public IReadOnlyList<CourseTeacher> TeachersInCourse { get; init; } = [];
+    public IReadOnlyList<CourseTeacher> TeachersInCourse { get; init => field = value ?? []; } = []; // the API sends null for empty lists
 }
 
 public sealed record CourseTeacher

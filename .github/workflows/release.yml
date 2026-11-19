@@ -1,0 +1,184 @@
+# Every push to main: test, then build all downloads and publish them as a GitHub release.
+# Versions are date-based (UTC): 2026.11.19, then 2026.11.19.1, .2, … for later releases that day. See docs/notes/decisions.md.
+name: Release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# One release at a time, never cancelled: two pushes in quick succession get consecutive versions.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+          cache: true
+          cache-dependency-path: '**/*.csproj'
+      - run: dotnet build Educ8.slnx -c Release
+      - run: dotnet test Educ8.slnx -c Release --no-build --logger trx --results-directory test-results
+      - name: Keep test results of a failed run
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: test-results
+
+  version:
+    needs: test
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.next.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: next
+        run: |
+          version=$(.github/scripts/next-version.sh)
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "Releasing $version" >> "$GITHUB_STEP_SUMMARY"
+
+  # educ8-mcp for every platform, cross-published from Linux: one self-contained file per platform.
+  mcp:
+    needs: version
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rid: [linux-x64, linux-arm64, win-x64, osx-arm64, osx-x64]
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+          cache: true
+          cache-dependency-path: '**/*.csproj'
+      - name: Publish
+        run: >
+          dotnet publish src/Educ8.Mcp.Server -c Release -r ${{ matrix.rid }} --self-contained
+          -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:DebugType=none -p:Version=$VERSION -o out
+      - name: Pack
+        run: |
+          name="educ8-mcp-$VERSION-${{ matrix.rid }}"
+          mkdir -p dist
+          if [ "${{ matrix.rid }}" = win-x64 ]; then
+            (cd out && zip -q "../dist/$name.zip" educ8-mcp.exe)
+          else
+            tar -czf "dist/$name.tar.gz" -C out educ8-mcp
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mcp-${{ matrix.rid }}
+          path: dist/*
+
+  # The Linux desktop app (with its educ8-mcp) as a tar.gz with an installer.
+  desktop:
+    needs: version
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rid: [linux-x64, linux-arm64]
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+          cache: true
+          cache-dependency-path: '**/*.csproj'
+      - name: Publish app and MCP server
+        run: |
+          name="educ8-$VERSION-${{ matrix.rid }}"
+          for project in Educ8.App.Gtk Educ8.Mcp.Server; do
+            dotnet publish "src/$project" -c Release -r ${{ matrix.rid }} --self-contained -p:DebugType=none -p:Version=$VERSION -o "$name/app"
+          done
+          cp packaging/linux/* "$name/"
+          echo "$VERSION" > "$name/VERSION"
+          mkdir -p dist
+          tar -czf "dist/$name.tar.gz" "$name"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: desktop-${{ matrix.rid }}
+          path: dist/*
+
+  # The same app as a Flatpak bundle on the GNOME runtime (packages the desktop job's publish; see the manifest).
+  flatpak:
+    needs: [version, desktop]
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/flathub-infra/flatpak-github-actions:gnome-51
+      options: --privileged
+    strategy:
+      matrix:
+        include:
+          - arch: x86_64
+            rid: linux-x64
+          - arch: aarch64
+            rid: linux-arm64
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: desktop-${{ matrix.rid }}
+          path: dl
+      - name: Stage the publish for the manifest
+        run: |
+          tar -xzf "dl/educ8-$VERSION-${{ matrix.rid }}.tar.gz"
+          mkdir -p packaging/flatpak/stage
+          cp -R "educ8-$VERSION-${{ matrix.rid }}/." packaging/flatpak/stage/
+      - name: Docker for QEMU (aarch64)
+        if: matrix.arch == 'aarch64'
+        run: dnf -y install docker
+      - name: QEMU (aarch64)
+        if: matrix.arch == 'aarch64'
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+      - uses: flatpak/flatpak-github-actions/flatpak-builder@v6
+        with:
+          manifest-path: packaging/flatpak/io.github.educ8.Educ8.yml
+          bundle: educ8-${{ env.VERSION }}-${{ matrix.arch }}.flatpak
+          arch: ${{ matrix.arch }}
+          cache: false
+          upload-artifact: true
+
+  release:
+    needs: [version, mcp, desktop, flatpak]
+    runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Checksums
+        run: |
+          cd dist
+          sha256sum * > SHA256SUMS
+          cat SHA256SUMS >> "$GITHUB_STEP_SUMMARY"
+      - name: Create the release (and its tag)
+        run: >
+          gh release create "v$VERSION" dist/*
+          --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA"
+          --title "Educ8 $VERSION" --generate-notes

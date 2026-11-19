@@ -105,6 +105,24 @@ public class CalendarViewModelTests
     }
 
     [Fact]
+    public async Task A_file_that_cannot_be_downloaded_opens_in_itslearning_instead()
+    {
+        using var h = Host();
+        h.Files.Fail = new Educ8.Itslearning.Content.ContentUnavailableException("The file page has no download link.");
+        var vm = h.Calendar;
+        await vm.EnsureLoadedAsync();
+        vm.SelectedEvent = vm.Days[2].Events.Single(e => e.EventId == 2);
+        await WaitFor(() => vm.Details.Plans.Count > 0 && !vm.Details.IsLoading);
+
+        var file = vm.Details.Plans.Single().Material.Single();
+        await file.OpenCommand.ExecuteAsync(null);
+
+        Assert.Empty(h.OpenFile.Opened);
+        Assert.Equal(["https://sdu.itslearning.com/main.aspx?ElementID=72"], h.OpenUrl.Opened.Select(u => u.ToString()));
+        Assert.Equal("Couldn't download the file (The file page has no download link.). Opened it in itslearning instead.", file.ErrorMessage);
+    }
+
+    [Fact]
     public async Task Selecting_an_event_loads_details_with_plan_material()
     {
         using var h = Host();
@@ -125,10 +143,17 @@ public class CalendarViewModelTests
         var file = Assert.Single(plan.Material);
         Assert.Equal(("slides.pdf", "File"), (file.Title, file.KindText));
 
-        file.OpenCommand.Execute(null);
+        // A file downloads into the cache and opens in the default app; the second click reuses the copy.
+        Assert.True(file.OpensLocally);
+        await file.OpenCommand.ExecuteAsync(null);
+        await file.OpenCommand.ExecuteAsync(null);
+        Assert.Equal([72], h.Files.Downloads);
+        Assert.Equal(2, h.OpenFile.Opened.Count);
+        Assert.All(h.OpenFile.Opened, path => Assert.Equal(Path.Combine(h.CacheDirectory, "72", "element-72.pdf"), path));
+        Assert.Null(file.ErrorMessage);
+
         d.OpenInItslearningCommand.Execute(null);
-        Assert.Equal(["https://sdu.itslearning.com/main.aspx?ElementID=72", "https://sdu.itslearning.com/Course/Course.aspx?CourseID=10&EventId=2"],
-            h.OpenUrl.Opened.Select(u => u.ToString()));
+        Assert.Equal(["https://sdu.itslearning.com/Course/Course.aspx?CourseID=10&EventId=2"], h.OpenUrl.Opened.Select(u => u.ToString()));
 
         vm.SelectedEvent = null;
         Assert.False(d.HasEvent);

@@ -7,3 +7,11 @@ obj/
 # Spike secrets and live responses (contain tokens / personal data)
 spikes/.secrets/
 spikes/out/
+
+# Packaging output
+packaging/flatpak/stage/
+packaging/flatpak/build/
+packaging/flatpak/repo/
+packaging/flatpak/.flatpak-builder/
+/artifacts/
+*.flatpak

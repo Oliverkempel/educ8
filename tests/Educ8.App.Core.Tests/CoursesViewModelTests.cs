@@ -40,6 +40,20 @@ public class CoursesViewModelTests
     }
 
     [Fact]
+    public async Task Course_with_null_lists_from_the_api_still_gets_a_card()
+    {
+        // itslearning sends "TeachersInCourse": null for some (older) courses; showing all courses used to crash on it.
+        var old = AppTestHost.Course(6, "Old course", "X-F20", "2020-03-01T08:00:00Z").Replace("\"TeachersInCourse\":[]", "\"TeachersInCourse\":null");
+        using var h = Host(AppTestHost.CoursesJson(old));
+        var vm = h.Courses;
+        await vm.EnsureLoadedAsync();
+        vm.ShowAll = true;
+
+        var card = Assert.Single(vm.Courses);
+        Assert.Equal("", card.TeachersText);
+    }
+
+    [Fact]
     public async Task Card_texts_are_ready_to_show()
     {
         using var h = Host(Data);

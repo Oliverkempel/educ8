@@ -1,6 +1,7 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/Educ8.App.Core/Educ8.App.Core.csproj" />
+    <Project Path="src/Educ8.App.Gtk/Educ8.App.Gtk.csproj" />
     <Project Path="src/Educ8.Documents/Educ8.Documents.csproj" />
     <Project Path="src/Educ8.Itslearning/Educ8.Itslearning.csproj" />
     <Project Path="src/Educ8.Mcp.Server/Educ8.Mcp.Server.csproj" />

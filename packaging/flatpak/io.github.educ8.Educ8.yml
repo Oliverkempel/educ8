@@ -1,0 +1,35 @@
+# Flatpak for the Linux desktop app. It packages a prebuilt, self-contained .NET publish (made by the release workflow,
+# or locally with packaging/flatpak/build-local.sh) instead of building .NET inside flatpak-builder: no .NET SDK
+# extension and no offline NuGet source list needed. The GNOME runtime already has GTK 4, libadwaita and WebKitGTK 6.
+#
+# Expects the publish in packaging/flatpak/stage/ (git-ignored):
+#   stage/app/            educ8 + educ8-mcp, self-contained, for this architecture
+#   stage/*.desktop/.svg/.metainfo.xml from packaging/linux
+id: io.github.educ8.Educ8
+runtime: org.gnome.Platform
+runtime-version: '51'
+sdk: org.gnome.Sdk
+command: educ8
+finish-args:
+  - --share=network
+  - --share=ipc
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --device=dri
+  # Shared with an educ8-mcp started outside the sandbox (login, MCP settings and activity). See Educ8Paths.DataDirectoryFor.
+  - --filesystem=xdg-data/Educ8:create
+modules:
+  - name: educ8
+    buildsystem: simple
+    sources:
+      - type: dir
+        path: stage
+    build-commands:
+      - mkdir -p /app/lib/educ8 /app/bin
+      - cp -R app/. /app/lib/educ8/
+      - chmod +x /app/lib/educ8/educ8 /app/lib/educ8/educ8-mcp
+      - ln -s /app/lib/educ8/educ8 /app/bin/educ8
+      - ln -s /app/lib/educ8/educ8-mcp /app/bin/educ8-mcp
+      - install -Dm644 io.github.educ8.Educ8.desktop /app/share/applications/io.github.educ8.Educ8.desktop
+      - install -Dm644 io.github.educ8.Educ8.svg /app/share/icons/hicolor/scalable/apps/io.github.educ8.Educ8.svg
+      - install -Dm644 io.github.educ8.Educ8.metainfo.xml /app/share/metainfo/io.github.educ8.Educ8.metainfo.xml

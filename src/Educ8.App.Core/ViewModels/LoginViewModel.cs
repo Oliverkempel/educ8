@@ -50,13 +50,19 @@ public sealed partial class LoginViewModel(LoginService login, IOptions<Itslearn
         IsBusy = false;
     }
 
+    /// <summary>The redirect URI's scheme (<c>itsl-itslearning</c>); platforms can register it with their web view.</summary>
+    public string RedirectScheme => _redirectScheme;
+
+    /// <summary>True if <paramref name="url"/> is the itslearning redirect that ends the sign-in.</summary>
+    public bool IsRedirect(Uri url) => url.Scheme.Equals(_redirectScheme, StringComparison.OrdinalIgnoreCase);
+
     /// <summary>
     /// Call for every navigation in the sign-in web view. Returns true if the platform UI must <b>cancel</b> the navigation
     /// (it's the itslearning redirect, handled here).
     /// </summary>
     public bool OnNavigating(Uri url)
     {
-        if (!url.Scheme.Equals(_redirectScheme, StringComparison.OrdinalIgnoreCase)) return false;
+        if (!IsRedirect(url)) return false;
         _ = CompleteAsync(url.OriginalString);
         return true;
     }
