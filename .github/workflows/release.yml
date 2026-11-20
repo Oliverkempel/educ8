@@ -6,6 +6,11 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      publish:
+        description: Publish a GitHub release. Off = build everything only (to test a branch before merging).
+        type: boolean
+        default: true
 
 # One release at a time, never cancelled: two pushes in quick succession get consecutive versions.
 concurrency:
@@ -172,8 +177,50 @@ jobs:
           name: flatpak-${{ matrix.arch }}
           path: dist/*
 
+  # The same app as a strict snap (amd64 natively, arm64 cross-packed). Ubuntu 24.04 matches the snap's core24 base,
+  # so snapcraft packs directly on the runner (--destructive-mode) without LXD.
+  snap:
+    needs: [version, desktop]
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            rid: linux-x64
+          - arch: arm64
+            rid: linux-arm64
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+      ARCH: ${{ matrix.arch }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: desktop-${{ matrix.rid }}
+          path: dl
+      - name: Stage the publish for snapcraft
+        run: |
+          tar -xzf "dl/educ8-$VERSION-${{ matrix.rid }}.tar.gz"
+          mkdir -p packaging/snap/stage
+          cp -R "educ8-$VERSION-${{ matrix.rid }}/." packaging/snap/stage/
+          sed -i "s/^version: .*/version: '$VERSION'/" packaging/snap/snapcraft.yaml
+      - name: Install snapcraft
+        run: sudo snap install snapcraft --classic
+      - name: Pack the snap
+        working-directory: packaging/snap
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/dist"
+          sudo snapcraft pack --destructive-mode --build-for="$ARCH" --output "$GITHUB_WORKSPACE/dist/educ8_${VERSION}_${ARCH}.snap"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: snap-${{ matrix.arch }}
+          path: dist/*
+
   release:
-    needs: [version, mcp, desktop, flatpak]
+    # Manual runs with "publish" off stop here: everything is built (and kept as run artifacts) but not released.
+    if: github.event_name == 'push' || inputs.publish
+    needs: [version, mcp, desktop, flatpak, snap]
     runs-on: ubuntu-latest
     env:
       VERSION: ${{ needs.version.outputs.version }}

@@ -1,0 +1,60 @@
+# Snap of the Linux desktop app and educ8-mcp. Like the Flatpak, it packages a prebuilt self-contained .NET publish
+# (made by the release workflow) instead of building .NET in snapcraft. The gnome extension provides GTK 4,
+# libadwaita and WebKitGTK 6.0 through the shared gnome-46-2404 platform (libadwaita 1.5; see Widgets.Spinner).
+#
+# Expects packaging/snap/stage/ (git-ignored): app/ (educ8 + educ8-mcp for the target architecture) and the files
+# from packaging/linux. The release workflow sets `version` before packing.
+#
+# After `sudo snap install --dangerous educ8_<version>_<arch>.snap`, connect the data folder once so the app shares its
+# login and settings with an educ8-mcp started by Claude:  sudo snap connect educ8:educ8-data
+name: educ8
+title: Educ8
+base: core24
+version: '0.0.0-dev'
+summary: Your itslearning courses, plans and calendar
+description: |
+  A native client for the itslearning learning platform: course pages with plans and resources, a week calendar with
+  lesson plans and material, and control over the Educ8 MCP server, which lets AI assistants read your courses.
+  Also contains the MCP server itself: educ8.educ8-mcp.
+grade: stable
+confinement: strict
+license: Proprietary
+
+platforms:
+  amd64:
+  arm64:
+    build-on: [amd64]
+    build-for: [arm64]
+
+plugs:
+  # Login, settings and MCP activity, shared with an educ8-mcp outside the snap (see Educ8Paths.DataDirectoryFor).
+  educ8-data:
+    interface: personal-files
+    write:
+      - $HOME/.local/share/Educ8
+
+apps:
+  educ8:
+    command: app/educ8
+    extensions: [gnome]
+    desktop: app/io.github.educ8.Educ8.desktop
+    common-id: io.github.educ8.Educ8
+    plugs: [network, educ8-data]
+    environment:
+      # WebKitGTK's own bubblewrap sandbox can't start inside a strict snap; the snap confinement isolates it instead.
+      WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS: '1'
+  educ8-mcp:
+    command: app/educ8-mcp
+    plugs: [network, educ8-data]
+
+parts:
+  educ8:
+    plugin: dump
+    source: stage
+    override-build: |
+      craftctl default
+      install -Dm644 io.github.educ8.Educ8.desktop "$CRAFT_PART_INSTALL/app/io.github.educ8.Educ8.desktop"
+      install -Dm644 io.github.educ8.Educ8.svg "$CRAFT_PART_INSTALL/app/io.github.educ8.Educ8.svg"
+      sed -i 's|^Icon=.*|Icon=${SNAP}/app/io.github.educ8.Educ8.svg|' "$CRAFT_PART_INSTALL/app/io.github.educ8.Educ8.desktop"
+    prime:
+      - app
