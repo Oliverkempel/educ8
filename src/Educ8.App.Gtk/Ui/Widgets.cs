@@ -78,9 +78,20 @@ internal static class Widgets
     public static string Escape(string? text) =>
         (text ?? "").Replace("&", "&amp;").Replace("<", "&lt;").Replace(">", "&gt;").Replace("\"", "&quot;").Replace("'", "&apos;");
 
-    public static Adw.Spinner Spinner(int size = 32)
+    /// <summary>
+    /// A loading spinner: <c>Adw.Spinner</c> (libadwaita 1.6+), or GTK's own on older libadwaita, e.g. the snap's
+    /// GNOME 46 platform (1.5), where the newer widget doesn't exist.
+    /// </summary>
+    public static Widget Spinner(int size = 32)
     {
-        var spinner = Adw.Spinner.New();
+        Widget spinner;
+        if (Adw.Functions.GetMajorVersion() > 1 || Adw.Functions.GetMinorVersion() >= 6) spinner = Adw.Spinner.New();
+        else
+        {
+            var gtk = global::Gtk.Spinner.New();
+            gtk.Start();
+            spinner = gtk;
+        }
         spinner.SetSizeRequest(size, size);
         spinner.SetHalign(Align.Center);
         spinner.SetValign(Align.Center);

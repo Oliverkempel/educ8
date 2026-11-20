@@ -16,10 +16,10 @@ Download the latest release from the repository's **Releases** page:
 
 | You want | Download |
 |---|---|
-| The Linux app (includes `educ8-mcp`) | `educ8-<version>-x86_64.flatpak`, then `flatpak install --user educ8-<version>-x86_64.flatpak`; or `educ8-<version>-linux-x64.tar.gz`, then unpack it and run `./install.sh` |
+| The Linux app (includes `educ8-mcp`) | `educ8-<version>-x86_64.flatpak`, then `flatpak install --user educ8-<version>-x86_64.flatpak`; or `educ8_<version>_amd64.snap`, then `sudo snap install --dangerous educ8_<version>_amd64.snap && sudo snap connect educ8:educ8-data`; or `educ8-<version>-linux-x64.tar.gz`, then unpack it and run `./install.sh` |
 | Only the MCP server | `educ8-mcp-<version>-<platform>` (Linux, Windows, macOS; one self-contained file) |
 
-The tar.gz needs GTK 4, libadwaita and WebKitGTK 6.0. On Ubuntu: `sudo apt install libgtk-4-1 libadwaita-1-0 libwebkitgtk-6.0-4`. The Flatpak brings its own. The macOS and Windows builds of the MCP server aren't signed yet: on macOS run `xattr -d com.apple.quarantine educ8-mcp` once.
+The tar.gz needs GTK 4, libadwaita and WebKitGTK 6.0. On Ubuntu: `sudo apt install libgtk-4-1 libadwaita-1-0 libwebkitgtk-6.0-4`. The Flatpak and the snap bring their own. arm64 builds exist for all three. The macOS and Windows builds of the MCP server aren't signed yet: on macOS run `xattr -d com.apple.quarantine educ8-mcp` once.
 
 ### 2. Configure
 
@@ -52,7 +52,7 @@ Claude Desktop: add the server to `~/.config/Claude/claude_desktop_config.json` 
 }
 ```
 
-Use the path to `educ8-mcp` from your install: tar.gz `~/.local/opt/educ8/educ8-mcp`, or the file you downloaded. For the Flatpak, use `"command": "flatpak"` with `"args": ["run", "--command=educ8-mcp", "io.github.educ8.Educ8"]`.
+Use the path to `educ8-mcp` from your install: tar.gz `~/.local/opt/educ8/educ8-mcp`, or the file you downloaded. For the snap, use `/snap/bin/educ8.educ8-mcp`. For the Flatpak, use `"command": "flatpak"` with `"args": ["run", "--command=educ8-mcp", "io.github.educ8.Educ8"]`.
 
 Claude Code: `claude mcp add itslearning -- <path to educ8-mcp>`.
 
@@ -93,7 +93,7 @@ dotnet run --project src/Educ8.App.Gtk        # the app
 dotnet run --project src/Educ8.Mcp.Server     # the MCP server (stdio); `-- --help` for commands
 ```
 
-Releases are built by GitHub Actions on every push to `main`. Versions are dates: `2026.11.19`, then `2026.11.19.1` for a later release that day. `packaging/flatpak/build-local.sh` builds the Flatpak locally.
+Pull requests are built and tested by GitHub Actions; when one lands in `main`, a release is built. Versions are dates: `2026.11.19`, then `2026.11.19.1` for a later release that day. `packaging/flatpak/build-local.sh` builds the Flatpak locally.
 
 ## Project layout
 
@@ -104,5 +104,5 @@ Releases are built by GitHub Actions on every push to `main`. Versions are dates
 | `src/Educ8.Mcp`, `src/Educ8.Mcp.Server` | MCP tools and the `educ8-mcp` host and CLI |
 | `src/Educ8.App.Core` | Desktop app view models, shared by every platform UI |
 | `src/Educ8.App.Gtk` | Linux app (GTK 4 + libadwaita) |
-| `packaging/`, `.github/workflows/` | Linux packaging (tar.gz, Flatpak) and CI/releases |
+| `packaging/`, `.github/workflows/` | Linux packaging (tar.gz, Flatpak, snap) and CI/releases |
 | `docs/` | Design notes, API findings and decisions; start at [docs/README.md](docs/README.md) |

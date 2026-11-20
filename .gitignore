@@ -15,3 +15,6 @@ packaging/flatpak/repo/
 packaging/flatpak/.flatpak-builder/
 /artifacts/
 *.flatpak
+packaging/snap/stage/
+*.snap
+packaging/snap/out/

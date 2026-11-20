@@ -15,7 +15,7 @@ public static class Educ8Paths
     public static string DefaultDataDirectory => DataDirectoryFor(Environment.GetEnvironmentVariable);
 
     /// <summary>
-    /// <see cref="DataDirectoryEnvVar"/> if set. Inside a Flatpak (<c>FLATPAK_ID</c> set), the real <c>~/.local/share/Educ8</c>:
+    /// <see cref="DataDirectoryEnvVar"/> if set. Inside a Flatpak or a strict snap, the real <c>~/.local/share/Educ8</c>:
     /// there <c>XDG_DATA_HOME</c> is the app's private <c>~/.var/app/…</c>, and the sandboxed app must share its login and
     /// MCP settings with an <c>educ8-mcp</c> started outside it (the manifest grants <c>--filesystem=xdg-data/Educ8</c>).
     /// Otherwise the platform's per-user data folder.
@@ -25,6 +25,10 @@ public static class Educ8Paths
         if (getEnv(DataDirectoryEnvVar) is { Length: > 0 } overridden) return overridden;
         if (getEnv("FLATPAK_ID") is { Length: > 0 } && getEnv("HOME") is { Length: > 0 } home)
             return Path.Combine(home, ".local", "share", "Educ8");
+        // A strict snap points HOME into the snap's own folder; SNAP_REAL_HOME is the user's home (the snap's
+        // personal-files plug grants ~/.local/share/Educ8).
+        if (getEnv("SNAP") is { Length: > 0 } && getEnv("SNAP_REAL_HOME") is { Length: > 0 } realHome)
+            return Path.Combine(realHome, ".local", "share", "Educ8");
         return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData, Environment.SpecialFolderOption.Create), "Educ8");
     }
 

@@ -105,5 +105,8 @@ public sealed class FileStorageTests : IDisposable
         Assert.Equal("/tmp/elsewhere", Educ8Paths.DataDirectoryFor(env.GetValueOrDefault));
 
         Assert.EndsWith("Educ8", Educ8Paths.DataDirectoryFor(_ => null));
+
+        var snap = new Dictionary<string, string?> { ["SNAP"] = "/snap/educ8/x1", ["HOME"] = "/home/someone/snap/educ8/x1", ["SNAP_REAL_HOME"] = "/home/someone" };
+        Assert.Equal("/home/someone/.local/share/Educ8", Educ8Paths.DataDirectoryFor(snap.GetValueOrDefault));
     }
 }
