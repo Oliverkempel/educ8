@@ -18,7 +18,7 @@ description: |
   Also contains the MCP server itself: educ8.educ8-mcp.
 grade: stable
 confinement: strict
-license: Proprietary
+license: proprietary
 
 platforms:
   amd64:

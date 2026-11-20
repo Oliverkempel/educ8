@@ -210,8 +210,10 @@ jobs:
       - name: Pack the snap
         working-directory: packaging/snap
         run: |
+          # snapcraft only writes inside the project folder, so pack into out/ and move it to dist/.
+          sudo snapcraft pack --destructive-mode --build-for="$ARCH" --output "out/educ8_${VERSION}_${ARCH}.snap"
           mkdir -p "$GITHUB_WORKSPACE/dist"
-          sudo snapcraft pack --destructive-mode --build-for="$ARCH" --output "$GITHUB_WORKSPACE/dist/educ8_${VERSION}_${ARCH}.snap"
+          sudo mv "out/educ8_${VERSION}_${ARCH}.snap" "$GITHUB_WORKSPACE/dist/"
       - uses: actions/upload-artifact@v4
         with:
           name: snap-${{ matrix.arch }}
