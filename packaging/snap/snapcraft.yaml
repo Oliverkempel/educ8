@@ -18,7 +18,6 @@ description: |
   Also contains the MCP server itself: educ8.educ8-mcp.
 grade: stable
 confinement: strict
-license: proprietary
 
 platforms:
   amd64:
@@ -53,6 +52,8 @@ parts:
     source: stage
     override-build: |
       craftctl default
+      # .NET's optional LTTng tracing hook; needs liblttng-ust (not in the snap) and is only loaded when tracing is on.
+      rm -f "$CRAFT_PART_INSTALL/app/libcoreclrtraceptprovider.so"
       install -Dm644 io.github.educ8.Educ8.desktop "$CRAFT_PART_INSTALL/app/io.github.educ8.Educ8.desktop"
       install -Dm644 io.github.educ8.Educ8.svg "$CRAFT_PART_INSTALL/app/io.github.educ8.Educ8.svg"
       sed -i 's|^Icon=.*|Icon=${SNAP}/app/io.github.educ8.Educ8.svg|' "$CRAFT_PART_INSTALL/app/io.github.educ8.Educ8.desktop"
