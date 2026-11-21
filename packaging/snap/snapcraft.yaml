@@ -1,6 +1,6 @@
 # Snap of the Linux desktop app and educ8-mcp. Like the Flatpak, it packages a prebuilt self-contained .NET publish
-# (made by the release workflow) instead of building .NET in snapcraft. The gnome extension provides GTK 4,
-# libadwaita and WebKitGTK 6.0 through the shared gnome-46-2404 platform (libadwaita 1.5; see Widgets.Spinner).
+# (made by the release workflow) instead of building .NET in snapcraft. The gnome extension provides GTK 4
+# and libadwaita through the shared gnome-46-2404 platform (libadwaita 1.5; see Widgets.Spinner).
 #
 # Expects packaging/snap/stage/ (git-ignored): app/ (educ8 + educ8-mcp for the target architecture) and the files
 # from packaging/linux. The release workflow sets `version` before packing.
@@ -39,9 +39,6 @@ apps:
     desktop: app/io.github.educ8.Educ8.desktop
     common-id: io.github.educ8.Educ8
     plugs: [network, educ8-data]
-    environment:
-      # WebKitGTK's own bubblewrap sandbox can't start inside a strict snap; the snap confinement isolates it instead.
-      WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS: '1'
   educ8-mcp:
     command: app/educ8-mcp
     plugs: [network, educ8-data]

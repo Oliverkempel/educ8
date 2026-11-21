@@ -4,7 +4,7 @@ namespace Educ8.Itslearning.Auth;
 
 /// <summary>
 /// Hand-off point for login redirect URLs captured outside the process that started the login
-/// (e.g. by an OS URL-scheme handler). The desktop app's WebView doesn't need this; it calls
+/// (e.g. by an OS URL-scheme handler). A process that receives the redirect for its own login calls
 /// <see cref="LoginService.CompleteAsync"/> directly.
 /// </summary>
 public interface ICallbackInbox

@@ -67,7 +67,7 @@ public static class AuthTools
                 {pending.AuthorizeUrl}
 
                 After signing in, itslearning hands the login to the `itsl-itslearning://` link:
-                - If the Educ8 login handler is installed (`educ8-mcp register-url-handler`), the browser may ask to open it. Accept, and the login completes by itself. Then call `auth_status` to confirm.
+                - If the Educ8 desktop app or the Educ8 login handler (`educ8-mcp register-url-handler`) is installed, the browser may ask to open it. Accept, and the login completes by itself. Then call `auth_status` to confirm.
                 - Otherwise the page stays blank. The user must copy the final `itsl-itslearning://login/?state=…&code=…` link and you pass it to `login_complete`.
 
                 The link is valid for {LoginService.PendingLifetime.TotalMinutes:0} minutes, and the code in it works only once.

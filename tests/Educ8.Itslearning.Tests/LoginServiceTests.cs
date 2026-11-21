@@ -49,6 +49,26 @@ public class LoginServiceTests
     }
 
     [Fact]
+    public async Task Accepted_redirect_completes_own_login_and_forwards_others()
+    {
+        using var t = new TestServices();
+        t.Http.Respond = (_, _) => FakeItslearning.Json(FakeItslearning.TokenJson("A", "R"));
+        using var sp = t.Build();
+        var login = sp.GetRequiredService<LoginService>();
+        var inbox = sp.GetRequiredService<ICallbackInbox>();
+
+        // A login some other process started (say educ8-mcp): passed on through the inbox, no token request here.
+        var foreign = "itsl-itslearning://login/?state=0123456789abcdef0123456789abcdef&code=900937-other";
+        Assert.False(await login.AcceptRedirectAsync(foreign));
+        Assert.Empty(t.Http.Requests);
+        Assert.Equal(foreign, await inbox.TryTakeAsync("0123456789abcdef0123456789abcdef"));
+
+        var pending = login.Begin();
+        Assert.True(await login.AcceptRedirectAsync($"itsl-itslearning://login/?state={pending.State}&code=900937-own"));
+        Assert.Equal("A", t.Store.Tokens!.AccessToken);
+    }
+
+    [Fact]
     public async Task Picks_up_redirect_delivered_by_another_process()
     {
         using var t = new TestServices();

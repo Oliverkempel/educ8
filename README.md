@@ -19,7 +19,7 @@ Download the latest release from the repository's **Releases** page:
 | The Linux app (includes `educ8-mcp`) | `educ8-<version>-x86_64.flatpak`, then `flatpak install --user educ8-<version>-x86_64.flatpak`; or `educ8_<version>_amd64.snap`, then `sudo snap install --dangerous educ8_<version>_amd64.snap && sudo snap connect educ8:educ8-data`; or `educ8-<version>-linux-x64.tar.gz`, then unpack it and run `./install.sh` |
 | Only the MCP server | `educ8-mcp-<version>-<platform>` (Linux, Windows, macOS; one self-contained file) |
 
-The tar.gz needs GTK 4, libadwaita and WebKitGTK 6.0. On Ubuntu: `sudo apt install libgtk-4-1 libadwaita-1-0 libwebkitgtk-6.0-4`. The Flatpak and the snap bring their own. arm64 builds exist for all three. The macOS and Windows builds of the MCP server aren't signed yet: on macOS run `xattr -d com.apple.quarantine educ8-mcp` once.
+The tar.gz needs GTK 4 and libadwaita. On Ubuntu: `sudo apt install libgtk-4-1 libadwaita-1-0`. The Flatpak and the snap bring their own. arm64 builds exist for all three. The macOS and Windows builds of the MCP server aren't signed yet: on macOS run `xattr -d com.apple.quarantine educ8-mcp` once.
 
 ### 2. Configure
 
@@ -36,9 +36,9 @@ The client id must be registered with itslearning for the redirect URI `itsl-its
 
 ### 3. Sign in
 
-Open **Educ8** and choose **Sign in with itslearning**. That's it.
+Open **Educ8** and choose **Sign in with itslearning**. Sign-in happens in your default browser, so if you're already signed in to your school there, it's one click. When the browser asks to open Educ8, allow it.
 
-Without the app, run `educ8-mcp login` and sign in in the browser. To let the browser finish the login by itself, register the link handler once with `educ8-mcp register-url-handler` (Linux, Windows); otherwise paste the final `itsl-itslearning://…` link into the terminal.
+Without the app, run `educ8-mcp login` and sign in in the browser. The installed app also finishes logins started by `educ8-mcp`. Without it, register the link handler once with `educ8-mcp register-url-handler` (Linux, Windows); otherwise paste the final `itsl-itslearning://…` link into the terminal.
 
 ### 4. Connect Claude
 

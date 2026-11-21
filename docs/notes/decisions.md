@@ -2,13 +2,21 @@
 
 Newest first. Each entry: date, decision, why.
 
+## 2026-11-21 — Desktop sign-in in the default browser
+
+- The app no longer embeds a web view for sign-in. **Sign in with itslearning** opens the authorize page in the default browser and shows "Continue in your browser". This replaces the embedded WebKitGTK login of 2026-11-19.
+- Why: it's what desktop apps usually do now. It reuses the browser's existing school/Microsoft session (often one click), and the user signs in where they trust the address bar. It also drops the WebKitGTK dependency (smaller tar.gz requirements, no WebKit sandbox workaround in the snap).
+- How the code gets back: itslearning's last page script-navigates to `itsl-itslearning://login/?state&code`. The app's desktop entry declares `MimeType=x-scheme-handler/itsl-itslearning` with `Exec=educ8 %u`, and `install.sh` makes it the default handler with `xdg-mime`. The Flatpak and the snap export the same entry. GApplication (`HandlesOpen`) forwards the URL to the running instance's `open` signal → `LoginViewModel.AcceptRedirectAsync` → `LoginService.AcceptRedirectAsync`.
+- **One handler serves both hosts.** A redirect whose state the app didn't start (a login begun by `educ8-mcp`) goes into the shared callback inbox, where the MCP server picks it up. If the app wasn't running, it does just that and quits without a window. The other way round, while the app waits it also watches the inbox, so `educ8-mcp register-url-handler` as the handler works for the app too.
+- Windows and macOS will do the same: a registered URL protocol on Windows, `CFBundleURLTypes` on macOS.
+
 ## 2026-11-19 — Releases: every push to main, date-based versions
 
 - **CD:** `.github/workflows/release.yml` runs when a change lands in `main` (and manually). It tests first, and only if everything passes builds and publishes a GitHub release. `ci.yml` builds and tests pull requests only (not every push).
 - **Versions are dates (CalVer, UTC):** `YYYY.M.D` for the first release of a day, then `YYYY.M.D.1`, `.2`, … (`.github/scripts/next-version.sh` counts the existing `v…` tags). They're valid .NET versions (every part ≤ 65535) and Flatpak versions. CI passes `-p:Version=…`; the SDK appends `+<commit>` to the informational version. Local builds are `0.0.0-dev`. `gh release create` makes the tag `v<version>` and notes from the commits/PRs since the last one.
 - **Each release contains:** the Linux desktop app with its `educ8-mcp` for x64 and arm64, as a tar.gz (with `install.sh`), a Flatpak bundle and a strict snap; `educ8-mcp` alone as a self-contained single file for linux-x64/arm64, win-x64 and osx-arm64/x64; and `SHA256SUMS`. Everything is cross-published from Linux runners (no macOS/Windows runners). aarch64 Flatpaks build under QEMU, the slowest part.
 - **The Flatpak packages the prebuilt self-contained publish** (`packaging/flatpak/io.github.educ8.Educ8.yml`, GNOME 51 runtime) instead of building .NET inside flatpak-builder. That way there's no .NET SDK extension and no offline NuGet source list. Inside the sandbox `Educ8Paths` uses the real `~/.local/share/Educ8` (granted with `--filesystem=xdg-data/Educ8`), so the app shares its login and MCP settings with an `educ8-mcp` started outside it.
-- **The snap** (`packaging/snap/snapcraft.yaml`, added 2026-11-20) is strict, on `core24` with the `gnome` extension (`gnome-46-2404`: GTK 4, libadwaita 1.5, WebKitGTK 6.0). No GNOME platform exists for `core26` yet. Like the Flatpak it packages the prebuilt publish. It's packed on an Ubuntu 24.04 runner with `--destructive-mode`; arm64 is cross-packed. libadwaita 1.5 lacks `Adw.Spinner`, so `Widgets.Spinner` falls back to `Gtk.Spinner`. A `personal-files` plug (`educ8-data`, connected by hand after `--dangerous` installs) gives access to the real `~/.local/share/Educ8` (`Educ8Paths` uses `SNAP_REAL_HOME`). Not in the Snap Store.
+- **The snap** (`packaging/snap/snapcraft.yaml`, added 2026-11-20) is strict, on `core24` with the `gnome` extension (`gnome-46-2404`: GTK 4, libadwaita 1.5). No GNOME platform exists for `core26` yet. Like the Flatpak it packages the prebuilt publish. It's packed on an Ubuntu 24.04 runner with `--destructive-mode`; arm64 is cross-packed. libadwaita 1.5 lacks `Adw.Spinner`, so `Widgets.Spinner` falls back to `Gtk.Spinner`. A `personal-files` plug (`educ8-data`, connected by hand after `--dangerous` installs) gives access to the real `~/.local/share/Educ8` (`Educ8Paths` uses `SNAP_REAL_HOME`). Not in the Snap Store.
 - **Test a branch without releasing:** run the Release workflow manually on the branch with "publish" off. It builds everything and keeps the files as run artifacts.
 - **Not yet:** code signing (macOS/Windows), Flathub, Snap Store, an About dialog showing the version.
 
@@ -27,7 +35,7 @@ Newest first. Each entry: date, decision, why.
 ## 2026-11-19 — Desktop app: native UI per platform on a shared C# core
 
 - The app must feel native everywhere and use each platform's own UI library: **GTK 4 + libadwaita** (Linux, via Gir.Core), **AppKit** (macOS, .NET for macOS, C#), **WinUI 3** (Windows).
-- All behaviour lives in a shared `Educ8.App.Core` (MVVM, CommunityToolkit.Mvvm) on top of `Educ8.Itslearning`. The platform projects contain only UI code. Login uses each platform's web view, intercepting the `itsl-itslearning://` redirect.
+- All behaviour lives in a shared `Educ8.App.Core` (MVVM, CommunityToolkit.Mvvm) on top of `Educ8.Itslearning`. The platform projects contain only UI code. Login uses each platform's web view, intercepting the `itsl-itslearning://` redirect (replaced on 2026-11-21: sign-in in the default browser).
 - Linux first (develop and test on the current machine), then Windows, then macOS; you have all three machines.
 - First features: start page with all courses, and a calendar. Plan: [../design/desktop-app-plan.md](../design/desktop-app-plan.md).
 - Rejected: MAUI (no Linux; Mac Catalyst instead of AppKit), Avalonia/Uno (draw their own controls), SwiftUI (a second codebase/language), Qt (weak C# bindings).

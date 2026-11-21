@@ -3,9 +3,11 @@ Type=Application
 Name=Educ8
 GenericName=itslearning client
 Comment=Your itslearning courses, plans and calendar
-Exec=educ8
+Exec=educ8 %u
 Icon=io.github.educ8.Educ8
 Terminal=false
 Categories=Education;GTK;
 Keywords=itslearning;course;calendar;LMS;
 StartupNotify=true
+# The browser hands the itslearning sign-in redirect to the app (see Program.cs, HandlesOpen).
+MimeType=x-scheme-handler/itsl-itslearning;

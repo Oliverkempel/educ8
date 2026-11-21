@@ -1,9 +1,9 @@
 # Desktop app plan
 
-Status: **D0 (shared core) done 2026-11-19. D1 (Linux app) done 2026-11-19**: sign-in through the embedded WebKitGTK view, courses and calendar all checked live against a real itslearning site. Next is D2 (Windows). Progress per platform: [desktop-parity.md](desktop-parity.md).
+Status: **D0 (shared core) done 2026-11-19. D1 (Linux app) done 2026-11-19**: sign-in (now in the default browser, 2026-11-21), courses and calendar all checked live against a real itslearning site. Next is D2 (Windows). Progress per platform: [desktop-parity.md](desktop-parity.md).
 
 ### D1 result
-- `src/Educ8.App.Gtk` (assembly `educ8`, app id `io.github.educ8.Educ8`), GirCore.Adw-1 + GirCore.WebKit-6.0 0.8.1. It is in `Educ8.slnx`. Run it with `dotnet run --project src/Educ8.App.Gtk`. It needs the GTK 4, libadwaita 1 and WebKitGTK 6.0 runtime libraries. `[assembly: SupportedOSPlatform("linux")]`, because the WebKit bindings are marked Linux-only.
+- `src/Educ8.App.Gtk` (assembly `educ8`, app id `io.github.educ8.Educ8`), GirCore.Adw-1 0.8.1 (WebKit was dropped with the browser sign-in, 2026-11-21). It is in `Educ8.slnx`. Run it with `dotnet run --project src/Educ8.App.Gtk`. It needs the GTK 4 and libadwaita 1 runtime libraries. `[assembly: SupportedOSPlatform("linux")]`.
 - Files:
   - `Program.cs`: composition only (same DI as D0).
   - `Services/GtkServices.cs`: `GtkDispatcher` uses `GLib.Functions.IdleAdd`, `GtkOpenUrl` uses `Gtk.UriLauncher`, and `GtkOpenFile` uses `Gtk.FileLauncher`.
@@ -19,9 +19,10 @@ Status: **D0 (shared core) done 2026-11-19. D1 (Linux app) done 2026-11-19**: si
 - Course files open in the default app. Clicking a File in the event details downloads it with `MaterialFiles` (App.Core) into the cache folder (`~/.cache/Educ8/files/<elementId>/`, honouring `XDG_CACHE_HOME`) and hands it to `IOpenFile`. Each file downloads once per app session. A failed download opens the item in itslearning instead and shows why on the row. Pages, links and assignments still open in the browser.
   - `Ui/Bind.cs`: small one-way binding helpers (property, text, visibility, collection rebuild, command + sensitivity, error banner). `Ui/Widgets.cs`: label, box and row factories. `Ui/Icons.cs`: the `AppIcon` → Adwaita symbolic map. No custom CSS: the UI uses stock libadwaita widgets and style classes (`card`, `boxed-list`, `heading`, `dim-label`, …). itslearning's course colours are not shown, which is the user's choice (2026-11-19). `AccentColor` stays in the view models for platforms or settings that want it.
   - `Shell/MainWindow.cs`: an `Adw.NavigationSplitView` with a sidebar (pages + account + sign out), and a stack for starting / signed out / signed in.
-  - `Views/WelcomeView`, `LoginDialog` (an `Adw.Dialog` with a `WebKit.WebView`; `OnDecidePolicy` passes every navigation to `LoginViewModel.OnNavigating` and ignores the redirect. A registered `itsl-itslearning` URI scheme and `OnLoadFailed` are fallbacks. Live, the policy signal caught it. `EDUC8_DEBUG=1` logs each navigation's scheme and host), `CoursesView` (a `FlowBox` of `card` boxes), `CalendarView` (header with previous/today/next, week title, `Gtk.Calendar` date picker, course `DropDown`, refresh; agenda as boxed lists per day) and `EventDetailsView` (an `Adw.OverlaySplitView` side pane).
+  - `Views/WelcomeView`, `LoginDialog` (an `Adw.Dialog` with a `StatusPage`: "Continue in your browser", spinner, "Open browser again"; closing it cancels. The redirect arrives through the application's `open` signal in `Program.cs`), `CoursesView` (a `FlowBox` of `card` boxes), `CalendarView` (header with previous/today/next, week title, `Gtk.Calendar` date picker, course `DropDown`, refresh; agenda as boxed lists per day) and `EventDetailsView` (an `Adw.OverlaySplitView` side pane).
 - GTK gotchas:
-  - Call `WebKit.Module.Initialize()` at startup. Gir.Core maps a library's short name (`WebKit`) to its real file (`libwebkitgtk-6.0.so.4`) only after the module is initialised. `Adw.Application` does this for Adw/Gtk but not for WebKit. Without it, the first `WebView.New()` (the sign-in dialog) throws `DllNotFoundException: WebKit`, even though the library is installed.
+  - Gir.Core's `Application.Run(args)` passes `args` to GApplication as argv unchanged, and GApplication treats argv[0] as the program name. `Program.cs` therefore puts `Environment.ProcessPath` in front; without it, `educ8 <url>` drops the URL and only activates the window.
+  - If Gir.Core is used for another native library (e.g. WebKit), call its `Module.Initialize()` at startup. Gir.Core maps the short library name to the real file only after that; `Adw.Application` does it only for Adw/Gtk.
   - `Adw.ActionRow` uses Pango markup by default. `Widgets.Row` turns it off, and `Widgets.Escape` is only for setters that parse markup: `StatusPage` **description** and `PreferencesGroup` title/description. `StatusPage` **title** and `WindowTitle` are plain text; escaping them showed `&quot;` in the UI. This was checked against libadwaita at runtime, so check again before escaping any other setter.
   - Never replace a `DropDown`'s model, or re-set its selection, from inside its own `notify::selected` handling. The calendar's course filter did that (selection → view model → re-sync) and crashed the app natively, with no .NET exception. `CalendarView.SyncFilter` now touches the model and selection only when they really differ.
   - Opening links: `GtkOpenUrl` and `GtkOpenFile` log failures to stderr and fall back to `Gio.AppInfo.LaunchDefaultForUri`. `EDUC8_DEBUG=1` logs every row click and launch (scheme, host and path only). A launch reported as successful only means the desktop accepted it. On 2026-11-19, links "did nothing" because the Flatpak **document portal mount** (`/run/user/<uid>/doc`) had disappeared. A headless test run with `dbus-run-session` had unmounted it (see "Never run the app with `dbus-run-session`" below), so the Zen Flatpak died at start (`bwrap: Can't find source path /run/user/1000/doc/by-app/…`, visible in `journalctl --user`). The fix was `systemctl --user restart xdg-document-portal.service`, or logging out and in. Nothing in the app needed changing.
@@ -36,7 +37,7 @@ Status: **D0 (shared core) done 2026-11-19. D1 (Linux app) done 2026-11-19**: si
 - Moved to `Educ8.Itslearning`: `Models/Plans.cs`, which has `PlanLookups.GetPlanMaterialsAsync` / `GetEventPlansAsync` (plan ↔ material folder, event → lesson plans), `PlanMaterials`, `LinkedPlan`, and `CourseCodes.Semester` / `CurrentSemester`. The MCP tools use them; its tests are unchanged and green. `PersonCourse` now maps `CourseColor`/`CourseFillColor` (hex).
 - New `src/Educ8.App.Core` with CommunityToolkit.Mvvm 8.4 (partial-property `[ObservableProperty]`):
   - `ShellViewModel`: Starting/SignedOut/SignedIn, sidebar items, account text, sign out. Follows `TokenManager.SessionChanged` and loads the shown page on first view.
-  - `LoginViewModel`: `Start` gives `AuthorizeUrl`. The platform web view calls `OnNavigating(uri)` for every navigation and cancels when it returns true (the `itsl-itslearning://` redirect).
+  - `LoginViewModel`: `Start` opens `AuthorizeUrl` in the default browser (`IOpenUrl`) and watches the callback inbox. The platform passes URLs the OS hands it to `AcceptRedirectAsync` (true = this app's sign-in, show the window).
   - `CoursesViewModel` + `CourseCardViewModel`: current semester = code suffix matches the running semester (`CurrentSemester`: Aug–Jan E, Feb–Jul F), or no code and active within 120 days. Has search, ready-made texts (teachers, "Updated yesterday", badges) and course colours.
   - `CalendarViewModel` + day/event item VMs: week from the culture's first day, ISO week number, range text (handles month and year crossings), previous/today/next/go-to-date, a course filter of courses with events that week, stale-load cancellation, and the selected event → `EventDetailsViewModel`.
   - `EventDetailsViewModel`: when/where/course/description as plain text, lesson plans with description and material, linked material, open in itslearning.
@@ -51,7 +52,7 @@ Status: **D0 (shared core) done 2026-11-19. D1 (Linux app) done 2026-11-19**: si
 
   | Platform | Toolkit | .NET target | Bindings |
   |---|---|---|---|
-  | Linux | **GTK 4 + libadwaita** (GNOME look) | `net10.0` | Gir.Core (`GirCore.Gtk-4.0`, `GirCore.Adw-1`, `GirCore.WebKit-6.0`, 0.8.x) |
+  | Linux | **GTK 4 + libadwaita** (GNOME look) | `net10.0` | Gir.Core (`GirCore.Gtk-4.0`, `GirCore.Adw-1`, 0.8.x) |
   | macOS | **AppKit** | `net10.0-macos` | .NET for macOS workload (`dotnet workload install macos`; needs a Mac with Xcode) |
   | Windows | **WinUI 3** | `net10.0-windows10.0.19041.0` | Windows App SDK 2.7 (needs Windows to build) |
 
@@ -67,7 +68,7 @@ Cross-platform UI frameworks (MAUI, Avalonia, Uno) are ruled out. MAUI has no Li
 ┌──────────────── platform UIs (one per OS, only UI code) ────────────────┐
 │ Educ8.App.Gtk            │ Educ8.App.Mac             │ Educ8.App.Windows │
 │ GTK4 + libadwaita        │ AppKit                    │ WinUI 3 (XAML)    │
-│ WebKitGTK login view     │ WKWebView login view      │ WebView2 login    │
+│ URL handler (.desktop)   │ URL handler (Info.plist)  │ URL protocol      │
 ├──────────────────────────┴───────────────────────────┴───────────────────┤
 │ Educ8.App.Core (net10.0): view models, navigation, app services          │
 │   CommunityToolkit.Mvvm (ObservableObject, RelayCommand)                 │
@@ -82,7 +83,7 @@ Cross-platform UI frameworks (MAUI, Avalonia, Uno) are ruled out. MAUI has no Li
 - **Binding:**
   - WinUI binds natively (`x:Bind`).
   - GTK and AppKit have no data binding, so each gets a small `Bind` helper. It subscribes to `PropertyChanged` and `CollectionChanged`, and feeds collections into `Gio.ListStore` (GTK) or an `NSTableView` data source (AppKit).
-- **Platform services** (interfaces in App.Core, implemented per platform): `IUiDispatcher` (run on the UI thread), `IOpenUrl` (open a link in the default browser), `ILoginView` (show the sign-in page, report the redirect), and later `ISecretStore` and notifications.
+- **Platform services** (interfaces in App.Core, implemented per platform): `IUiDispatcher` (run on the UI thread), `IOpenUrl` (open a link in the default browser), receiving the `itsl-itslearning://` redirect from the OS (passed to `LoginViewModel.AcceptRedirectAsync`), and later `ISecretStore` and notifications.
 - **Shared session with the MCP server:** the same data directory and `TokenManager` with its cross-process lock (already built). Logging in to the app also logs in the MCP server.
 - **UI definition:**
   - GTK and AppKit UIs are written in C#: no `.ui` XML files or storyboards. That keeps refactoring easy and avoids designer tooling.
@@ -110,15 +111,13 @@ Expected effort split: most work and nearly all bugs land in the shared layers. 
 
 ### Login in the app
 
-The redirect is `itsl-itslearning://login/?state&code`, sent by page script. Each platform's web view can cancel that navigation and pass the URL to `LoginService.CompleteAsync`. No URL handler or pasting is needed.
+Sign-in runs in the **default browser** (decided 2026-11-21; D1 first shipped an embedded WebKitGTK view). The redirect is `itsl-itslearning://login/?state&code`, sent by page script. The app registers as that scheme's handler, so the browser hands the URL to the app, which passes it to `LoginViewModel.AcceptRedirectAsync`. Redirects for logins the app didn't start go to the callback inbox for `educ8-mcp`.
 
-| Platform | Web view | Hook |
+| Platform | Registration | Where the URL arrives |
 |---|---|---|
-| GTK | WebKitGTK 6 (`WebKit.WebView`) | `decide-policy` signal → navigation action URI starts with `itsl-itslearning:` → `ignore()` |
-| macOS | `WKWebView` | `WKNavigationDelegate.DecidePolicy(navigationAction)` → `.Cancel` |
-| Windows | WebView2 (`Microsoft.UI.Xaml.Controls.WebView2`) | `NavigationStarting` → `args.Cancel = true` |
-
-Risk: Microsoft's sign-in page could reject an embedded browser. WebView2 and WKWebView are normally accepted. If WebKitGTK is rejected, set a standard browser user agent; as a last resort, fall back to the system browser with the existing URL handler.
+| GTK | Desktop entry `MimeType=x-scheme-handler/itsl-itslearning`, `Exec=educ8 %u` (+ `xdg-mime default` in `install.sh`; Flatpak/snap export the entry) | `Gio.ApplicationFlags.HandlesOpen` → `open` signal in the running instance |
+| macOS | `CFBundleURLTypes` in Info.plist | `NSApplicationDelegate.OpenUrls` |
+| Windows | `HKCU\Software\Classes\itsl-itslearning` (or an MSIX protocol extension) | Single instance: redirect activation to the running instance (`AppInstance.RedirectActivationToAsync`) |
 
 ## First features
 
@@ -127,7 +126,7 @@ Risk: Microsoft's sign-in page could reject an embedded browser. WebView2 and WK
   - GTK: `Adw.NavigationSplitView` + `Adw.HeaderBar`
   - macOS: `NSSplitViewController` with a sidebar and a unified toolbar
   - Windows: `NavigationView` with Mica backdrop
-- **Signed-out state:** a welcome page with **"Sign in with itslearning"**, which opens the login web view (in a sheet/dialog).
+- **Signed-out state:** a welcome page with **"Sign in with itslearning"**, which opens sign-in in the default browser and shows "Continue in your browser" (in a sheet/dialog).
 - **Errors** appear as native toasts or info bars (`Adw.Toast`, `InfoBar`, an `NSAlert` sheet), not modal crashes.
 
 ### Start page: all courses
@@ -165,9 +164,9 @@ Risk: Microsoft's sign-in page could reject an embedded browser. WebView2 and WK
 | Phase | Where | Done when |
 |---|---|---|
 | **D0: Shared core** | Linux | Logic moved to `Educ8.Itslearning`. Shared strings (resx), course colours and the icon-name enum in App.Core. `desktop-parity.md` created. `Educ8.App.Core` has `ShellViewModel` (session/login state, navigation), `LoginViewModel` (begin login, accept the redirect URL), `CoursesViewModel` (+ card VM, search, semester filter), `CalendarViewModel` (week, days, events, filter) and `EventDetailsViewModel`. Unit tests are green and the MCP tests still pass. |
-| **D1: Linux app** | Linux | `Educ8.App.Gtk` with an `Adw.Application` (app id e.g. `io.github.educ8.Educ8`), shell, WebKitGTK login, courses page and calendar. Tried live against a real itslearning site: log in, see all courses, browse weeks. Shares the login with the MCP server. |
-| **D2: Windows app** | Windows PC | `Educ8.App.Windows` (WinUI 3, unpackaged to start with): the same three screens in XAML with `x:Bind` to the same view models, plus WebView2 login. Tried live. |
-| **D3: macOS app** | Mac | `Educ8.App.Mac` (AppKit): the same screens, WKWebView login, standard menu bar. Tried live. |
+| **D1: Linux app** | Linux | `Educ8.App.Gtk` with an `Adw.Application` (app id e.g. `io.github.educ8.Educ8`), shell, login, courses page and calendar. Tried live against a real itslearning site: log in, see all courses, browse weeks. Shares the login with the MCP server. |
+| **D2: Windows app** | Windows PC | `Educ8.App.Windows` (WinUI 3, unpackaged to start with): the same three screens in XAML with `x:Bind` to the same view models, plus browser login (URL protocol). Tried live. |
+| **D3: macOS app** | Mac | `Educ8.App.Mac` (AppKit): the same screens, browser login (URL type), standard menu bar. Tried live. |
 | **D4: Polish** | all | OS secret stores for tokens (libsecret / Keychain / Credential Manager), settings, app icons, keyboard shortcuts, accessibility pass, and packaging (Linux tar.gz + Flatpak bundles are **done** via the release workflow on 2026-11-19; still open: Flathub, MSIX, signed `.app`/`.dmg`). Then the **"Start MCP server"** menu (loopback Streamable HTTP host in the app). |
 
 ## Testing
@@ -181,7 +180,7 @@ Risk: Microsoft's sign-in page could reject an embedded browser. WebView2 and WK
 | Risk | Mitigation |
 |---|---|
 | Gir.Core is pre-1.0 (0.8.x; 0.9 in preview) | Pin versions centrally and keep GTK code thin; most code is in App.Core |
-| Microsoft sign-in in embedded WebKitGTK | User-agent override; system-browser + URL-handler fallback (already built) |
+| The browser doesn't hand the `itsl-itslearning://` link to the app (handler not registered, or blocked) | The app also watches the callback inbox, so `educ8-mcp register-url-handler` works as a fallback; `educ8-mcp login` can take a pasted link |
 | Three UIs triple the UI work | All behaviour in shared view models; each UI is mostly layout |
 | macOS/Windows builds need those machines | CI builds on every push; manual testing on the Mac and the PC per phase |
 | itslearning web markup changes | Already isolated in `WebPageParsers` with fixture tests |

@@ -1,6 +1,6 @@
 # Flatpak for the Linux desktop app. It packages a prebuilt, self-contained .NET publish (made by the release workflow,
 # or locally with packaging/flatpak/build-local.sh) instead of building .NET inside flatpak-builder: no .NET SDK
-# extension and no offline NuGet source list needed. The GNOME runtime already has GTK 4, libadwaita and WebKitGTK 6.
+# extension and no offline NuGet source list needed. The GNOME runtime already has GTK 4 and libadwaita.
 #
 # Expects the publish in packaging/flatpak/stage/ (git-ignored):
 #   stage/app/            educ8 + educ8-mcp, self-contained, for this architecture

@@ -10,7 +10,7 @@ public sealed record PendingLogin(string State, Uri AuthorizeUrl, DateTimeOffset
 /// <summary>
 /// Runs the OAuth2 authorization code flow independent of any UI:
 /// <see cref="Begin"/> gives the URL to show; the host captures the <c>itsl-itslearning://login/?…</c> redirect
-/// (WebView in the desktop app, URL-scheme handler or user paste for the MCP server) and passes it to
+/// (OS URL-scheme handler: the desktop app or `educ8-mcp handle-url`; or a paste) and passes it to
 /// <see cref="CompleteAsync"/>.
 /// </summary>
 public sealed class LoginService(OAuthClient oauth, TokenManager tokens, ICallbackInbox inbox, TimeProvider time, ILogger<LoginService> logger)
@@ -54,6 +54,23 @@ public sealed class LoginService(OAuthClient oauth, TokenManager tokens, ICallba
     }
 
     /// <summary>
+    /// Takes a redirect URL the OS handed to this process (the app is the system's <c>itsl-itslearning://</c> handler).
+    /// If the login was started here, it completes it and returns true. Otherwise it puts the URL in the
+    /// <see cref="ICallbackInbox"/> for the process that started it (e.g. <c>educ8-mcp</c>) and returns false.
+    /// </summary>
+    public async Task<bool> AcceptRedirectAsync(string redirectUrl, CancellationToken ct = default)
+    {
+        var redirect = AuthorizationRedirect.Parse(redirectUrl);
+        if (_pending.ContainsKey(redirect.State))
+        {
+            await CompleteAsync(redirectUrl, ct).ConfigureAwait(false);
+            return true;
+        }
+        await inbox.DeliverAsync(redirect, redirectUrl, ct).ConfigureAwait(false);
+        return false;
+    }
+
+    /// <summary>
     /// Completes pending logins whose redirect was delivered to the <see cref="ICallbackInbox"/> by another process.
     /// Returns true if a login completed.
     /// </summary>
@@ -82,5 +99,6 @@ public sealed class LoginService(OAuthClient oauth, TokenManager tokens, ICallba
         return false;
     }
 
-    private bool IsExpired(PendingLogin p) => time.GetUtcNow() - p.StartedAt > PendingLifetime;
+    /// <summary>True once <paramref name="p"/> is older than <see cref="PendingLifetime"/>.</summary>
+    public bool IsExpired(PendingLogin p) => time.GetUtcNow() - p.StartedAt > PendingLifetime;
 }

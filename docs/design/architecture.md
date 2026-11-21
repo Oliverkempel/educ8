@@ -15,8 +15,8 @@ So the itslearning access code (login, tokens, API client, content readers) must
 ┌────────────────────────── hosts ──────────────────────────┐
 │ Educ8.Mcp.Server (console, now)  │  Educ8.App (desktop, later)          │
 │  - stdio MCP host                │   - UI (MAUI or Avalonia, TBD)       │
-│  - CLI: login/status/logout,     │   - WebView login (intercepts        │
-│    URL-scheme handler            │     itsl-itslearning://)             │
+│  - CLI: login/status/logout,     │   - browser login (OS hands back     │
+│    URL-scheme handler            │     itsl-itslearning:// links)       │
 │                                  │   - menu: start/stop MCP server      │
 │                                  │     (loopback Streamable HTTP)       │
 ├──────────────────────────────────┴──────────────────────────────────────┤
@@ -58,7 +58,7 @@ Facts: redirect URI `itsl-itslearning://login`. itslearning's final page runs `t
 
 | Host | How the `itsl-itslearning://` URL is received |
 |---|---|
-| Desktop app (later) | Embedded WebView. Cancel the navigation to the `itsl-itslearning` scheme and take the URL. Cleanest; no OS setup |
+| Desktop app | Default browser. The app's desktop entry registers it for `itsl-itslearning` (`Exec=educ8 %u`); GApplication hands the URL to the running app's `open` signal → `LoginService.AcceptRedirectAsync`. Redirects for logins the app didn't start go into `callbacks/` for `educ8-mcp`; while waiting, the app also watches `callbacks/`, so either handler serves both |
 | MCP server, with URL handler registered | `Educ8.Mcp.Server register-url-handler` registers the OS handler for `itsl-itslearning` (Linux `.desktop` + `xdg-mime`; Windows `HKCU\Software\Classes`; macOS needs an app bundle, so not supported). The browser opens `Educ8.Mcp.Server handle-url <url>`, which drops the URL in `callbacks/<state>.url`. The waiting server (`FileCallbackInbox`) picks it up |
 | MCP server, fallback | The user copies the final `itsl-itslearning://login/?…` URL and the `login_complete` tool takes it |
 

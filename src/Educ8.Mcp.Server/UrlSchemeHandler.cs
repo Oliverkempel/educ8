@@ -8,7 +8,8 @@ namespace Educ8.Mcp.Server;
 /// <summary>
 /// Registers this executable as the OS handler for itsl-itslearning:// so the browser can hand the login redirect to us.
 /// Linux: ~/.local/share/applications/*.desktop + xdg-mime. Windows: HKCU\Software\Classes. macOS needs an app bundle
-/// (not supported here; use paste/`login_complete`). The desktop app will capture the redirect in its WebView instead.
+/// (not supported here; use paste/`login_complete`). The desktop app registers itself for the same scheme in its desktop
+/// entry and passes logins it didn't start to the same inbox, so either handler serves both.
 /// </summary>
 internal static class UrlSchemeHandler
 {

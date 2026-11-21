@@ -136,6 +136,11 @@ Caveats: this is **web scraping of undocumented pages**, so it may break with it
 - `courses/resources/{id}/v1` works for folders too (`ElementType: "Folder"`).
 - `courses/{id}/resources/search/v1` matches **titles** across the whole course tree.
 
+## Desktop sign-in in the default browser (2026-11-21)
+
+- Verified live with the Flatpak app and a Flatpak Firefox-based browser (Zen) as the default browser. The script redirect to `itsl-itslearning://login/?…` is a top-level navigation, so the browser offers to open the registered handler (no user-gesture block). The URL then goes through the OpenURI portal to the host handler (`flatpak run … --file-forwarding io.github.educ8.Educ8 @@u %u @@`; non-file URIs pass through unchanged) and on to the running instance's `open` signal.
+- So the default-browser flow replaces the embedded web view (decision of 2026-11-21). The notes below are from the embedded view and stay as history.
+
 ## Desktop sign-in in an embedded web view (2026-11-19)
 
 - Microsoft sign-in works inside WebKitGTK 2.52 with its default user agent; no override is needed.

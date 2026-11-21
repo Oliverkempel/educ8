@@ -16,6 +16,8 @@ ln -sf "$opt/educ8-mcp" "$bin/educ8-mcp"
 sed "s|^Exec=educ8|Exec=$opt/educ8|" "$here/io.github.educ8.Educ8.desktop" > "$prefix/applications/io.github.educ8.Educ8.desktop"
 cp "$here/io.github.educ8.Educ8.svg" "$prefix/icons/hicolor/scalable/apps/"
 update-desktop-database "$prefix/applications" >/dev/null 2>&1 || true
+# Sign-in happens in the browser, which hands the itsl-itslearning:// redirect back to the app.
+xdg-mime default io.github.educ8.Educ8.desktop x-scheme-handler/itsl-itslearning >/dev/null 2>&1 || true
 gtk-update-icon-cache -f -t "$prefix/icons/hicolor" >/dev/null 2>&1 || true
 
 echo "Installed Educ8 $(cat "$here/VERSION") to $opt"

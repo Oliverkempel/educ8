@@ -2,6 +2,7 @@ using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Educ8.App.Core.Resources;
+using Educ8.App.Core.Services;
 using Educ8.Itslearning;
 using Educ8.Itslearning.Auth;
 using Microsoft.Extensions.Options;
@@ -9,19 +10,23 @@ using Microsoft.Extensions.Options;
 namespace Educ8.App.Core.ViewModels;
 
 /// <summary>
-/// Sign-in in an embedded web view. The platform UI shows <see cref="AuthorizeUrl"/> when <see cref="IsActive"/>, and passes every
-/// navigation to <see cref="OnNavigating"/>. When itslearning redirects to <c>itsl-itslearning://login/?…</c>, this view model
-/// cancels that navigation and completes the login. No URL handler or pasting is needed.
+/// Sign-in in the user's default browser, so an existing browser session (school SSO) is reused.
+/// <see cref="StartCommand"/> opens itslearning's sign-in page; at the end itslearning sends the browser to
+/// <c>itsl-itslearning://login/?…</c>, which the OS hands to the app (it is registered as that scheme's handler).
+/// The platform passes that URL to <see cref="AcceptRedirectAsync"/>. If another handler receives it instead
+/// (e.g. <c>educ8-mcp handle-url</c>), it arrives through the shared <see cref="ICallbackInbox"/>, which is watched while
+/// <see cref="IsActive"/>.
 /// </summary>
-public sealed partial class LoginViewModel(LoginService login, IOptions<ItslearningOptions> options) : ObservableObject
+public sealed partial class LoginViewModel(LoginService login, IOpenUrl openUrl, IOptions<ItslearningOptions> options) : ObservableObject
 {
     private readonly string _redirectScheme = new Uri(options.Value.RedirectUri).Scheme;
+    private CancellationTokenSource? _wait;
 
-    /// <summary>True while the sign-in web view should be shown.</summary>
+    /// <summary>True while a sign-in is waiting for the browser (show "Continue in your browser").</summary>
     [ObservableProperty]
     public partial bool IsActive { get; private set; }
 
-    /// <summary>The page to load in the web view.</summary>
+    /// <summary>The sign-in page opened in the browser.</summary>
     [ObservableProperty]
     public partial Uri? AuthorizeUrl { get; private set; }
 
@@ -38,57 +43,104 @@ public sealed partial class LoginViewModel(LoginService login, IOptions<Itslearn
     [RelayCommand]
     private void Start()
     {
+        StopWaiting();
         ErrorMessage = null;
-        AuthorizeUrl = login.Begin().AuthorizeUrl;
+        var pending = login.Begin();
+        AuthorizeUrl = pending.AuthorizeUrl;
         IsActive = true;
+        openUrl.Open(pending.AuthorizeUrl);
+        var wait = _wait = new CancellationTokenSource();
+        _ = WaitForOtherHandlerAsync(pending, wait.Token);
+    }
+
+    /// <summary>For when the browser tab got closed or never opened.</summary>
+    [RelayCommand]
+    private void OpenBrowserAgain()
+    {
+        if (AuthorizeUrl is { } url) openUrl.Open(url);
     }
 
     [RelayCommand]
     private void Cancel()
     {
+        StopWaiting();
         IsActive = false;
         IsBusy = false;
     }
 
-    /// <summary>The redirect URI's scheme (<c>itsl-itslearning</c>); platforms can register it with their web view.</summary>
-    public string RedirectScheme => _redirectScheme;
-
-    /// <summary>True if <paramref name="url"/> is the itslearning redirect that ends the sign-in.</summary>
-    public bool IsRedirect(Uri url) => url.Scheme.Equals(_redirectScheme, StringComparison.OrdinalIgnoreCase);
+    /// <summary>True if <paramref name="url"/> is an itslearning login redirect (<c>itsl-itslearning://…</c>).</summary>
+    public bool IsRedirect(string url) =>
+        Uri.TryCreate(url, UriKind.Absolute, out var u) && u.Scheme.Equals(_redirectScheme, StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
-    /// Call for every navigation in the sign-in web view. Returns true if the platform UI must <b>cancel</b> the navigation
-    /// (it's the itslearning redirect, handled here).
+    /// Call with a URL the OS handed to the app. Completes this app's sign-in, or passes the redirect on to the process that
+    /// started that login (<c>educ8-mcp</c>). Returns true if it was this app's sign-in (the platform should show its window);
+    /// false for other logins and for URLs that aren't login redirects.
     /// </summary>
-    public bool OnNavigating(Uri url)
+    public async Task<bool> AcceptRedirectAsync(string url)
     {
         if (!IsRedirect(url)) return false;
-        _ = CompleteAsync(url.OriginalString);
-        return true;
-    }
-
-    internal async Task CompleteAsync(string redirectUrl)
-    {
-        IsBusy = true;
+        var own = false;
+        IsBusy = IsActive;
         try
         {
-            await login.CompleteAsync(redirectUrl);
-            IsActive = false;
-            Completed?.Invoke(this, EventArgs.Empty);
+            own = await login.AcceptRedirectAsync(url);
+            if (own) Succeeded();
         }
-        catch (LoginException e)
+        catch (Exception e) when (e is LoginException or HttpRequestException or TaskCanceledException or IOException)
         {
-            ErrorMessage = string.Format(CultureInfo.CurrentCulture, Strings.LoginFailed, e.Message);
-            IsActive = false;
-        }
-        catch (Exception e) when (e is HttpRequestException or TaskCanceledException)
-        {
-            ErrorMessage = Presentation.Texts.Error(e);
-            IsActive = false;
+            // A bad link while nobody is signing in here was meant for another process: nothing to show.
+            if (IsActive) Fail(e);
         }
         finally
         {
             IsBusy = false;
         }
+        return own;
+    }
+
+    /// <summary>Picks up the redirect if another URL handler put it in the inbox; reports a sign-in that expired.</summary>
+    private async Task WaitForOtherHandlerAsync(PendingLogin pending, CancellationToken ct)
+    {
+        try
+        {
+            if (await login.WaitForInboxAsync(pending, ct)) Succeeded();
+            else if (!ct.IsCancellationRequested && login.IsExpired(pending) && IsActive)
+            {
+                StopWaiting();
+                ErrorMessage = Strings.LoginExpired;
+                IsActive = false;
+            }
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+        }
+        catch (Exception e) when (e is LoginException or HttpRequestException or TaskCanceledException or IOException)
+        {
+            Fail(e);
+        }
+    }
+
+    private void Succeeded()
+    {
+        StopWaiting();
+        IsActive = false;
+        Completed?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void Fail(Exception e)
+    {
+        StopWaiting();
+        ErrorMessage = e is LoginException
+            ? string.Format(CultureInfo.CurrentCulture, Strings.LoginFailed, e.Message)
+            : Presentation.Texts.Error(e);
+        IsActive = false;
+    }
+
+    private void StopWaiting()
+    {
+        _wait?.Cancel();
+        _wait?.Dispose();
+        _wait = null;
     }
 }

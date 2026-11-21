@@ -36,15 +36,40 @@ services.AddSingleton<IOpenFile>(openFile);
 services.AddEduc8AppCore();
 using var provider = services.BuildServiceProvider();
 
-// Gir.Core maps each library's short name ("WebKit") to its real file only once the module is initialised.
-// Adw/Gtk are initialised by Adw.Application; WebKit is used later (sign-in dialog) and must be initialised here.
-WebKit.Module.Initialize();
-
 var screenshotDir = Environment.GetEnvironmentVariable("EDUC8_SCREENSHOT_DIR") is { Length: > 0 } d ? d : null;
 // One instance per session: a second launch activates the running window and exits. Screenshot runs stay separate.
+// HandlesOpen: the desktop entry registers the app for itsl-itslearning:// links, so the browser hands the sign-in redirect
+// to `educ8 <url>`, which GApplication forwards to the running instance's open signal.
 var app = Adw.Application.New("io.github.educ8.Educ8",
-    screenshotDir is null ? Gio.ApplicationFlags.DefaultFlags : Gio.ApplicationFlags.NonUnique);
+    (screenshotDir is null ? Gio.ApplicationFlags.DefaultFlags : Gio.ApplicationFlags.NonUnique) | Gio.ApplicationFlags.HandlesOpen);
 MainWindow? main = null;
+app.OnOpen += (sender, args) =>
+{
+    var login = provider.GetRequiredService<ShellViewModel>().Login;
+    var redirects = args.Files.Select(f => f.GetUri()).Where(login.IsRedirect).ToList();
+    if (redirects.Count == 0)
+    {
+        app.Activate(); // `educ8 something-else`: just show the window
+        return;
+    }
+    // Keep the process alive while the redirect is handled: without a window (a login started by educ8-mcp while the
+    // app was closed) it only passes the link on and quits.
+    app.Hold();
+    _ = HandleRedirectsAsync();
+
+    async Task HandleRedirectsAsync()
+    {
+        try
+        {
+            foreach (var url in redirects)
+                if (await login.AcceptRedirectAsync(url)) main?.Window.Present();
+        }
+        finally
+        {
+            app.Release();
+        }
+    }
+};
 app.OnActivate += (_, _) =>
 {
     if (main is not null)
@@ -62,4 +87,5 @@ app.OnActivate += (_, _) =>
     if (screenshotDir is not null)
         _ = Screenshots.RunAsync(app, main, shell, screenshotDir);
 };
-return app.RunWithSynchronizationContext(args);
+// GApplication expects argv[0] to be the program name (Gir.Core doesn't add it); without it the first URL is dropped.
+return app.RunWithSynchronizationContext([Environment.ProcessPath ?? "educ8", .. args]);
