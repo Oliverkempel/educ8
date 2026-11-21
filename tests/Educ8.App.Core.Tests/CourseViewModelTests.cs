@@ -1,3 +1,4 @@
+using Educ8.App.Core.Elements;
 using System.Net;
 using Educ8.App.Core.ViewModels;
 using Educ8.Itslearning.Tests;
@@ -136,15 +137,13 @@ public class CourseViewModelTests
         // Inactive (hidden) items are left out.
         Assert.Equal(["Week 1", "slides.pdf"], root.Items.Select(i => i.Title));
 
-        FolderViewModel? opened = null;
-        root.FolderOpened += (_, f) => opened = f;
-        root.OpenCommand.Execute(root.Items[0]);
-        Assert.NotNull(opened);
+        root.Items[0].OpenCommand.Execute(null);
+        var opened = Assert.IsType<FolderViewModel>(Assert.Single(h.Pages));
         Assert.Equal((10, 300, "Week 1"), (opened.CourseId, opened.FolderId, opened.Title));
         await opened.EnsureLoadedAsync();
         Assert.Equal(("Reading guide", "Page"), (opened.Items.Single().Title, opened.Items.Single().SubtitleText));
 
-        root.OpenCommand.Execute(root.Items[1]);
+        root.Items[1].OpenCommand.Execute(null);
         await WaitFor(() => h.OpenFile.Opened.Count == 1);
         Assert.Equal([72], h.Files.Downloads);
     }
@@ -166,12 +165,10 @@ public class CourseViewModelTests
         Assert.Equal("No material found for this lesson.", plans.Plans[0].EmptyText);
 
         // A folder in a plan opens as an in-app page; a file opens in the default app.
-        FolderViewModel? opened = null;
-        course.FolderOpened += (_, f) => opened = f;
-        course.OpenItemCommand.Execute(new MaterialItemViewModel(300, "Week 1", Itslearning.Models.ResourceKind.Folder, null, h.OpenUrl,
-            (Services.MaterialFiles)h.Provider.GetService(typeof(Services.MaterialFiles))!));
-        Assert.Equal((10, 300, "Week 1"), (opened!.CourseId, opened.FolderId, opened.Title));
-        course.OpenItemCommand.Execute(plans.Plans[2].Material[0]);
+        h.Elements.Item(new ElementRef(300, "Week 1", "Folder", 0, 10, null)).OpenCommand.Execute(null);
+        var opened = Assert.IsType<FolderViewModel>(h.Pages.Last());
+        Assert.Equal((10, 300, "Week 1"), (opened.CourseId, opened.FolderId, opened.Title));
+        plans.Plans[2].Material[0].OpenCommand.Execute(null);
         await WaitFor(() => h.OpenFile.Opened.Count == 1);
         Assert.Null(plans.EmptyText);
     }
@@ -181,12 +178,10 @@ public class CourseViewModelTests
     {
         using var h = Host();
         var course = await OpenCourse(h);
-        FolderViewModel? opened = null;
-        course.Resources.FolderOpened += (_, f) => opened = f;
-        course.Resources.OpenCommand.Execute(new MaterialItemViewModel(302, "Empty", Itslearning.Models.ResourceKind.Folder, null, h.OpenUrl,
-            (Services.MaterialFiles)h.Provider.GetService(typeof(Services.MaterialFiles))!));
+        h.Elements.Item(new ElementRef(302, "Empty", "Folder", 0, 10, null)).OpenCommand.Execute(null);
+        var opened = Assert.IsType<FolderViewModel>(h.Pages.Last());
 
-        Assert.Null(opened!.EmptyText); // not loaded yet
+        Assert.Null(opened.EmptyText); // not loaded yet
         await opened.EnsureLoadedAsync();
         Assert.Equal("This folder is empty.", opened.EmptyText);
     }

@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Educ8.App.Core.Elements;
 using Educ8.App.Core.Presentation;
 using Educ8.App.Core.Resources;
 using Educ8.App.Core.Services;
@@ -10,17 +11,15 @@ using Educ8.Itslearning.Models;
 
 namespace Educ8.App.Core.ViewModels;
 
-/// <summary>Creates course and folder pages (they need the same services, and folders create further folders).</summary>
-public sealed class CoursePageFactory(Func<ItslearningClient> client, TimeProvider time, IOpenUrl openUrl, MaterialFiles files)
+/// <summary>Creates course pages and their parts. Element rows come from the <see cref="ElementNavigator"/>, which decides how they open.</summary>
+public sealed class CoursePageFactory(Func<ItslearningClient> client, TimeProvider time, IOpenUrl openUrl, ElementNavigator navigator)
 {
-    public CourseViewModel Course(int courseId, string title, string code, Uri? url) => new(this, client, time, openUrl, files, courseId, title, code, url);
+    public CourseViewModel Course(int courseId, string title, string code, Uri? url) => new(client, time, openUrl, navigator, courseId, title, code, url);
 
-    public FolderViewModel Folder(int courseId, int? folderId, string title) => new(this, client, openUrl, files, courseId, folderId, title);
-
-    public CoursePlansViewModel Plans(int courseId) => new(client, time, openUrl, files, courseId);
+    public CoursePlansViewModel Plans(int courseId) => new(client, time, navigator, courseId);
 
     public PlanPageViewModel PlanPage(int courseId, string courseTitle, PlanItemViewModel plan, Action openCourse) =>
-        new(this, courseId, courseTitle, plan, openCourse);
+        new(courseId, courseTitle, plan, openCourse);
 
     /// <summary>
     /// The course's plans that run today (local date): a single-day plan dated today, or a period that includes today. With
@@ -41,7 +40,7 @@ public sealed class CoursePageFactory(Func<ItslearningClient> client, TimeProvid
         var materials = await c.GetPlanMaterialsAsync(courseId, topics, plans, ct);
         var topicNames = topics?.ToDictionary(t => t.TopicId, t => t.TopicName) ?? [];
         return plans.Select(p => new PlanItemViewModel(p.PlanName, topicNames.GetValueOrDefault(p.TopicId), p.PlanDescription,
-            materials.GetValueOrDefault(p.PlanId), Texts.Span(p.Start, p.Stop, now, zone), openUrl, files)).ToList();
+            materials.GetValueOrDefault(p.PlanId), Texts.Span(p.Start, p.Stop, now, zone), navigator)).ToList();
     }
 
     /// <summary>True if the plan has a date and <paramref name="day"/> falls within it. An end at midnight belongs to the day before.</summary>
@@ -54,8 +53,7 @@ public sealed class CoursePageFactory(Func<ItslearningClient> client, TimeProvid
         return DateOnly.FromDateTime(first.DateTime) <= day && day <= DateOnly.FromDateTime(last.DateTime);
     }
 
-    internal MaterialItemViewModel Item(CourseResource r, string? detail = null) =>
-        new(r.ElementId, r.Title, r.Kind, r.Url, openUrl, files, detail);
+    internal MaterialItemViewModel Item(CourseResource r, string? detail = null) => navigator.Item(ElementRef.From(r), detail);
 }
 
 /// <summary>
@@ -135,25 +133,23 @@ public sealed partial class CourseViewModel : ObservableObject
     private readonly Func<ItslearningClient> _client;
     private readonly TimeProvider _time;
     private readonly IOpenUrl _openUrl;
-    private readonly MaterialFiles _files;
-    private readonly CoursePageFactory _pages;
+    private readonly ElementNavigator _navigator;
     private CancellationTokenSource? _loading;
     private bool _loaded;
 
-    internal CourseViewModel(CoursePageFactory pages, Func<ItslearningClient> client, TimeProvider time, IOpenUrl openUrl, MaterialFiles files,
+    internal CourseViewModel(Func<ItslearningClient> client, TimeProvider time, IOpenUrl openUrl, ElementNavigator navigator,
         int courseId, string title, string code, Uri? url)
     {
-        _pages = pages;
         _client = client;
         _time = time;
         _openUrl = openUrl;
-        _files = files;
+        _navigator = navigator;
         CourseId = courseId;
         Title = title;
         Subtitle = code;
         Url = url;
-        Resources = pages.Folder(courseId, null, Strings.CourseResources);
-        AllPlans = pages.Plans(courseId);
+        Resources = FolderViewModel.CourseRoot(navigator, courseId, url);
+        AllPlans = new CoursePlansViewModel(client, time, navigator, courseId);
     }
 
     public int CourseId { get; }
@@ -197,19 +193,6 @@ public sealed partial class CourseViewModel : ObservableObject
         if (Url is not null) _openUrl.Open(Url);
     }
 
-    /// <summary>Raised with a folder's page when a folder in the overview or the Plans tab is opened (the platform pushes it).</summary>
-    public event EventHandler<FolderViewModel>? FolderOpened;
-
-    /// <summary>Opens material shown on the course page: folders as an in-app page, everything else like other material.</summary>
-    [RelayCommand]
-    private void OpenItem(MaterialItemViewModel item)
-    {
-        if (item.Kind == ResourceKind.Folder)
-            FolderOpened?.Invoke(this, _pages.Folder(CourseId, item.ElementId, item.Title));
-        else if (!item.OpenCommand.IsRunning)
-            item.OpenCommand.Execute(null);
-    }
-
     private async Task LoadAsync()
     {
         _loading?.Cancel();
@@ -234,15 +217,15 @@ public sealed partial class CourseViewModel : ObservableObject
                         var materials = await c.GetPlanMaterialsAsync(CourseId, topics, plans, ct);
                         var topicNames = topics?.ToDictionary(t => t.TopicId, t => t.TopicName) ?? [];
                         return plans.Select(p => new PlanItemViewModel(p.PlanName, topicNames.GetValueOrDefault(p.TopicId), p.PlanDescription,
-                            materials.GetValueOrDefault(p.PlanId), Texts.Span(p.Start, p.Stop, now, zone), _openUrl, _files)).ToList();
+                            materials.GetValueOrDefault(p.PlanId), Texts.Span(p.Start, p.Stop, now, zone), _navigator)).ToList();
                     },
                     plans => plans, ct),
                 Tasks.LoadAsync(() => c.GetCourseTasksAsync(CourseId, "Active", ct),
                     tasks => tasks.OrderBy(t => t.Deadline ?? DateTimeOffset.MaxValue).Select(t =>
-                        new MaterialItemViewModel(t.ElementId, t.Title, t.Kind, t.Url, _openUrl, _files,
+                        _navigator.Item(ElementRef.From(t),
                             t.Deadline is { } d ? string.Format(System.Globalization.CultureInfo.CurrentCulture, Strings.DueOn, Texts.Date(d, now, zone)) : null)), ct),
                 Changes.LoadAsync(() => c.GetCourseStreamAsync(CourseId, now.AddDays(-ChangesDays), MaxChanges, ct),
-                    items => items.Select(i => new MaterialItemViewModel(i.ElementId, HtmlToText.Convert(i.Text), i.Kind, i.Url, _openUrl, _files,
+                    items => items.Select(i => _navigator.Item(ElementRef.From(i, HtmlToText.Convert(i.Text)),
                         Meta(i.PublishedBy?.FullName, i.PublishedDate, now, zone)
                         + (i.IsGroup ? $" · {string.Format(System.Globalization.CultureInfo.CurrentCulture, Strings.MoreItems, i.ElementsCount)}" : ""))), ct));
         }
@@ -263,97 +246,6 @@ public sealed partial class CourseViewModel : ObservableObject
 }
 
 /// <summary>
-/// One course folder: its items, in itslearning's order. Activating a folder raises <see cref="FolderOpened"/> with the
-/// subfolder's page (the platform pushes it); anything else opens like other material (files in the default app).
-/// </summary>
-public sealed partial class FolderViewModel : ObservableObject
-{
-    private readonly CoursePageFactory _pages;
-    private readonly Func<ItslearningClient> _client;
-    private readonly IOpenUrl _openUrl;
-    private readonly MaterialFiles _files;
-    private CancellationTokenSource? _loading;
-    private bool _loaded;
-
-    internal FolderViewModel(CoursePageFactory pages, Func<ItslearningClient> client, IOpenUrl openUrl, MaterialFiles files, int courseId, int? folderId, string title)
-    {
-        _pages = pages;
-        _client = client;
-        _openUrl = openUrl;
-        _files = files;
-        CourseId = courseId;
-        FolderId = folderId;
-        Title = title;
-    }
-
-    public int CourseId { get; }
-
-    /// <summary>Null for the course's top level.</summary>
-    public int? FolderId { get; }
-    public string Title { get; }
-    public ObservableCollection<MaterialItemViewModel> Items { get; } = [];
-
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(EmptyText))]
-    public partial bool IsLoading { get; private set; }
-
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(EmptyText))]
-    public partial string? ErrorMessage { get; private set; }
-
-    /// <summary>"This folder is empty." when loaded with no items; otherwise null.</summary>
-    public string? EmptyText => !IsLoading && ErrorMessage is null && Items.Count == 0 && _loaded ? Strings.FolderEmpty : null;
-
-    /// <summary>Raised with the subfolder's page when a folder is opened.</summary>
-    public event EventHandler<FolderViewModel>? FolderOpened;
-
-    public async Task EnsureLoadedAsync()
-    {
-        if (_loaded) return;
-        await RefreshAsync();
-    }
-
-    [RelayCommand]
-    private async Task RefreshAsync()
-    {
-        _loading?.Cancel();
-        var cts = _loading = new CancellationTokenSource();
-        _loaded = true;
-        IsLoading = true;
-        ErrorMessage = null;
-        try
-        {
-            var items = await _client().GetFolderResourcesAsync(CourseId, FolderId, cts.Token);
-            if (cts.IsCancellationRequested) return;
-            Items.Clear();
-            foreach (var r in items.Where(r => r.Active)) Items.Add(_pages.Item(r));
-        }
-        catch (OperationCanceledException) when (cts.IsCancellationRequested)
-        {
-        }
-        catch (Exception e)
-        {
-            if (!cts.IsCancellationRequested) ErrorMessage = Texts.Error(e);
-        }
-        finally
-        {
-            if (_loading == cts) IsLoading = false;
-            OnPropertyChanged(nameof(EmptyText));
-        }
-    }
-
-    /// <summary>Opens an item: folders as a new page (<see cref="FolderOpened"/>), everything else like other material.</summary>
-    [RelayCommand]
-    private void Open(MaterialItemViewModel item)
-    {
-        if (item.Kind == ResourceKind.Folder)
-            FolderOpened?.Invoke(this, _pages.Folder(CourseId, item.ElementId, item.Title));
-        else if (!item.OpenCommand.IsRunning)
-            item.OpenCommand.Execute(null);
-    }
-}
-
-/// <summary>
 /// The course page's Plans tab: every plan in the course in itslearning's course order (across topics), each with its material.
 /// A plan's topic is shown with it when it differs from the plan's name (many courses have one topic per week, named like the plan).
 /// </summary>
@@ -361,17 +253,15 @@ public sealed partial class CoursePlansViewModel : ObservableObject
 {
     private readonly Func<ItslearningClient> _client;
     private readonly TimeProvider _time;
-    private readonly IOpenUrl _openUrl;
-    private readonly MaterialFiles _files;
+    private readonly ElementNavigator _navigator;
     private CancellationTokenSource? _loading;
     private bool _loaded;
 
-    internal CoursePlansViewModel(Func<ItslearningClient> client, TimeProvider time, IOpenUrl openUrl, MaterialFiles files, int courseId)
+    internal CoursePlansViewModel(Func<ItslearningClient> client, TimeProvider time, ElementNavigator navigator, int courseId)
     {
         _client = client;
         _time = time;
-        _openUrl = openUrl;
-        _files = files;
+        _navigator = navigator;
         CourseId = courseId;
     }
 
@@ -418,7 +308,7 @@ public sealed partial class CoursePlansViewModel : ObservableObject
             {
                 var topicText = topic is not null && !topic.Trim().Equals(p.Title.Trim(), StringComparison.OrdinalIgnoreCase) ? topic : null;
                 Plans.Add(new PlanItemViewModel(p.Title, topicText, p.Description, new PlanMaterials(null, c.MaterialsOf(CourseId, p)),
-                    p.Start is null ? Strings.PlanNoDate : Texts.Span(p.Start, p.Stop, now, zone), _openUrl, _files));
+                    p.Start is null ? Strings.PlanNoDate : Texts.Span(p.Start, p.Stop, now, zone), _navigator));
             }
         }
         catch (OperationCanceledException) when (cts.IsCancellationRequested)
@@ -438,16 +328,14 @@ public sealed partial class CoursePlansViewModel : ObservableObject
 
 /// <summary>
 /// One lesson plan on its own page (opened from a course card's active plans): when it runs, its description and material.
-/// Folders in the material open as folder pages (<see cref="FolderOpened"/>); everything else like other material.
+/// The material opens through the element modules like everywhere else.
 /// </summary>
 public sealed partial class PlanPageViewModel
 {
-    private readonly CoursePageFactory _pages;
     private readonly Action _openCourse;
 
-    internal PlanPageViewModel(CoursePageFactory pages, int courseId, string courseTitle, PlanItemViewModel plan, Action openCourse)
+    internal PlanPageViewModel(int courseId, string courseTitle, PlanItemViewModel plan, Action openCourse)
     {
-        _pages = pages;
         _openCourse = openCourse;
         CourseId = courseId;
         CourseTitle = courseTitle;
@@ -457,18 +345,6 @@ public sealed partial class PlanPageViewModel
     public int CourseId { get; }
     public string CourseTitle { get; }
     public PlanItemViewModel Plan { get; }
-
-    /// <summary>Raised with a folder's page when a folder in the plan's material is opened (the platform pushes it).</summary>
-    public event EventHandler<FolderViewModel>? FolderOpened;
-
-    [RelayCommand]
-    private void OpenItem(MaterialItemViewModel item)
-    {
-        if (item.Kind == ResourceKind.Folder)
-            FolderOpened?.Invoke(this, _pages.Folder(CourseId, item.ElementId, item.Title));
-        else if (!item.OpenCommand.IsRunning)
-            item.OpenCommand.Execute(null);
-    }
 
     /// <summary>Opens the plan's course page.</summary>
     [RelayCommand]

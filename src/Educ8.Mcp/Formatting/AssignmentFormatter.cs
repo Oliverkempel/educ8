@@ -5,16 +5,6 @@ using Educ8.Itslearning.Models;
 
 namespace Educ8.Mcp.Formatting;
 
-/// <summary>Everything known about one assignment, gathered from REST + the assignment web view.</summary>
-internal sealed record AssignmentInfo(
-    CourseResourceWithCourse? Element,
-    AssignmentDetails Details,
-    AssignmentSettings? Settings,
-    AssignmentAnswer? Answer,
-    IReadOnlyList<AssignmentFile> FeedbackFiles,
-    AssignmentView? View,
-    IReadOnlyList<string> Problems);
-
 internal static class AssignmentFormatter
 {
     public static string Format(AssignmentInfo a, TimeZoneInfo zone, DateTimeOffset now)
@@ -114,7 +104,7 @@ internal static class AssignmentFormatter
 
         if (teacherFiles.Count > 0 || a.Answer?.Files.Count > 0 || a.FeedbackFiles.Count > 0)
             sb.Append("Read any file listed above with `read_assignment_file` (elementId and fileId).\n");
-        foreach (var problem in a.Problems) sb.Append($"\nNote: {problem}");
+        if (a.ViewUnavailable) sb.Append("\nNote: Your status, score and the teacher's feedback couldn't be loaded from the assignment page right now.");
         return sb.ToString().TrimEnd();
     }
 

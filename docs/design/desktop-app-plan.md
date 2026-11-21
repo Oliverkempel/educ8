@@ -31,7 +31,7 @@ Status: **D0 (shared core) done 2026-11-19. D1 (Linux app) done 2026-11-19**: si
   - Cards in a `FlowBox`: put `card` + `activatable` on the `FlowBoxChild` itself, not on a box inside it. Otherwise the focus ring is drawn around the child with a different corner radius than the card.
   - Only one copy of the app runs per session. A second launch activates the first one's window and exits silently. Screenshot runs use `NonUnique`, so they work while the app is open.
   - `PreferencesGroup` titles are one line, so long lesson-plan names use a heading label instead.
-- **Headless check** (no Xvfb on this machine): start `gtk4-broadwayd :7`, open `http://127.0.0.1:8087` in a **visible** browser, then run `GDK_BACKEND=broadway BROADWAY_DISPLAY=:7 EDUC8_SCREENSHOT_DIR=<dir> ./educ8` from the build output. It saves `courses.png`, `courses-grid.png`, `courses-list.png` (the first three rows expanded), `plan.png` (the first active plan, if any), `course.png` and `course-resources.png` (first course), `notifications.png` (listing only) and `notification-course.png` (the first already-read course notification opened in the app; read ones are never written), `messages.png`, `conversation.png` (an already-read conversation, so nothing is marked), `message-new.png` (empty form, nothing sent), `calendar.png`, `calendar-filter.png` (a course picked in the drop-down) and `event.png` (or `welcome.png` when signed out) and quits. Broadway draws frames only while a viewer is connected and visible. Without one, the captures are stale or empty. **Never run the app with `dbus-run-session`** (e.g. to get around the single-instance hand-off). A private session bus starts a second `xdg-document-portal`, which takes over `/run/user/<uid>/doc` and unmounts it when it exits. That breaks every Flatpak app (Zen couldn't open links) until `systemctl --user restart xdg-document-portal.service`. Screenshot runs already use `NonUnique`.
+- **Headless check** (no Xvfb on this machine): start `gtk4-broadwayd :7`, open `http://127.0.0.1:8087` in a **visible** browser, then run `GDK_BACKEND=broadway BROADWAY_DISPLAY=:7 EDUC8_SCREENSHOT_DIR=<dir> ./educ8` from the build output. It saves `courses.png`, `courses-grid.png`, `courses-list.png` (the first three rows expanded), `plan.png` (the first active plan, if any), `course.png` and `course-resources.png` (first course), `folder.png`, `page.png` (the first ones in the first course's folders), `assignment.png` and `hand-in.png` (an assignment from the first courses' open tasks; the dialog is opened empty and closed, never reviewed or submitted), `notifications.png` (listing only) and `notification-course.png` (the first already-read course notification opened in the app; read ones are never written), `messages.png`, `conversation.png` (an already-read conversation, so nothing is marked), `message-new.png` (empty form, nothing sent), `calendar.png`, `calendar-filter.png` (a course picked in the drop-down) and `event.png` (or `welcome.png` when signed out) and quits. Broadway draws frames only while a viewer is connected and visible. Without one, the captures are stale or empty. **Never run the app with `dbus-run-session`** (e.g. to get around the single-instance hand-off). A private session bus starts a second `xdg-document-portal`, which takes over `/run/user/<uid>/doc` and unmounts it when it exits. That breaks every Flatpak app (Zen couldn't open links) until `systemctl --user restart xdg-document-portal.service`. Screenshot runs already use `NonUnique`.
 
 ### D0 result
 - Moved to `Educ8.Itslearning`: `Models/Plans.cs`, which has `PlanLookups.GetPlanMaterialsAsync` / `GetEventPlansAsync` (plan ↔ material folder, event → lesson plans), `PlanMaterials`, `LinkedPlan`, and `CourseCodes.Semester` / `CurrentSemester`. The MCP tools use them; its tests are unchanged and green. `PersonCourse` now maps `CourseColor`/`CourseFillColor` (hex).
@@ -129,6 +129,25 @@ Sign-in runs in the **default browser** (decided 2026-11-21; D1 first shipped an
 - **Signed-out state:** a welcome page with **"Sign in with itslearning"**, which opens sign-in in the default browser and shows "Continue in your browser" (in a sheet/dialog).
 - **Errors** appear as native toasts or info bars (`Adw.Toast`, `InfoBar`, an `NSAlert` sheet), not modal crashes.
 
+### Course elements in the app (2026-11-21)
+
+Course elements (files, pages, assignments, …) open through **element modules**: one class per kind in `src/Educ8.App.Core/Elements/`, registered in `AddEduc8AppCore` with `services.AddElementModule<T>()` (registration order is priority). `ElementNavigator` sends each element to the first module whose `Handles(ElementRef)` matches its `(ElementType, LearningToolId)`, and to the browser when none does. Rows (`MaterialItemViewModel`) are made by `navigator.Item(...)` everywhere (folders, plans, tasks, changes, event links), so the chevron or browser icon on a row comes from the module, not the UI.
+
+| Module | Handles | Opens |
+|---|---|---|
+| `FolderModule` | `Folder` | In-app folder page (looks up the course for event links) |
+| `FileModule` | tool 5009 | Downloaded and opened in the default app |
+| `PageModule` | tool 5 | In-app page: blocks as native rich text; other block kinds as a placeholder |
+| `LinkModule` | tool 5010 | The link's real target directly; a link with a description first shows it |
+| `AssignmentModule` | tool 5006 | In-app assignment (description, files, answer, status, feedback) + hand-in |
+| none | tests 5002, surveys 5050, discussions, activities, learning paths, tools 13221/5015, unknown | Browser |
+
+- In-app pages derive from `ElementPageViewModel` (loading with cancellation, error/empty states, "Open in itslearning", links in text). The navigator raises `PageOpened`; the GTK `MainWindow` pushes `ElementPages.Create(vm)` onto the navigation stack of the section that's showing (Courses, Calendar, Notifications and Messages each have one). `ElementPages` has one arm per page view model and a generic page for types without one, so a platform that lags a module still works.
+- **Adding a kind:** a module (`Handles => e.IsTool(id)` or by element type), its page view model, one `AddElementModule` line, and a page builder per platform (an arm in `ElementPages`). Add the pair to the routing table in `ElementNavigatorTests`.
+- Author HTML is converted once by `HtmlToRichText` (`Educ8.Documents`) into a `RichDocument` (paragraphs, headings, lists, quotes, code, simple tables, styled spans with links; media and complex content as `RichUnsupported` placeholders). GTK renders it with `Ui/RichTextView.cs` (labels with escaped Pango markup); WinUI and AppKit will render the same model. Links in text go through `ElementNavigator.OpenLinkAsync`: itslearning element links open in the app, the rest in the browser. Images are placeholders for now (open question 6g).
+- Activities and learning paths stay in the browser for now. Live (2026-11-21), none of 43 activities had a description in the tasks API (a page would only repeat the title), and the account had no learning paths to verify a listing on.
+- Hand-in: see the decision of 2026-11-21. The screenshot harness never calls Review or Submit.
+
 ### Notifications (2026-11-21)
 - Sidebar entry with the unread count (from itslearning) as a badge. The page lists the bell notifications as a boxed list: text, sender · date, an accent dot while unread. Clicking one marks it read on itslearning and opens it: announcements as the course page in the app (pushed on the Notifications page), element notifications (assessments, submissions) in the browser; "Mark all as read" in the header. See the decision of 2026-11-21.
 
@@ -151,7 +170,7 @@ Sign-in runs in the **default browser** (decided 2026-11-21; D1 first shipped an
 - A **week agenda**: days of the selected week, each with its events. Each event shows time, title, room/teachers and course colour, and today is highlighted.
 - Navigation: previous, today, next, and a date picker (`Gtk.Calendar` in a popover / `NSDatePicker` / `CalendarDatePicker`).
 - A **course filter** (all courses or one).
-- **Event details** pane or sheet: time, place, timetable info, the linked lesson plan with its description and material list, and "Open in itslearning". Opening material inside the app comes later; for now it opens in the browser.
+- **Event details** pane or sheet: time, place, timetable info, the linked lesson plan with its description and material list, and "Open in itslearning". Material opens through the element modules (see "Course elements in the app").
 - A visual week grid (time axis, columns per day) can come later on top of the same view model.
 
 ## Changes needed in the existing code

@@ -1,3 +1,4 @@
+using Educ8.App.Core.Elements;
 using Educ8.App.Core.Presentation;
 using Educ8.App.Core.ViewModels;
 using Educ8.Itslearning.Http;
@@ -18,6 +19,14 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<CourseCatalog>();
         services.AddSingleton<Services.AppPreferences>();
         services.AddSingleton<Services.MaterialFiles>();
+        // Course elements: one module per kind, first match wins; elements no module handles open in the browser.
+        services.AddElementModule<Elements.FolderModule>();
+        services.AddElementModule<Elements.FileModule>();
+        services.AddElementModule<Elements.PageModule>();
+        services.AddElementModule<Elements.LinkModule>();
+        services.AddElementModule<Elements.AssignmentModule>();
+        services.AddSingleton<Elements.AssignmentHandIn>();
+        services.AddSingleton<Elements.ElementNavigator>();
         services.AddSingleton<CoursePageFactory>();
         services.AddSingleton<LoginViewModel>();
         services.AddSingleton<CoursesViewModel>();

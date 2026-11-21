@@ -15,6 +15,9 @@ internal sealed class NotificationsView
 {
     public Widget Root { get; }
 
+    /// <summary>The navigation stack (list → course and element pages).</summary>
+    public Adw.NavigationView Navigation { get; }
+
     public NotificationsView(NotificationsViewModel vm)
     {
         var markAll = Button.NewWithLabel(Strings.NotificationsMarkAllRead);
@@ -61,7 +64,8 @@ internal sealed class NotificationsView
         // Course pages (and their folders) open on top of the list, with the standard back button.
         var navigation = Adw.NavigationView.New();
         navigation.Add(Adw.NavigationPage.New(toolbar, Strings.NavNotifications));
-        vm.CourseOpened += (_, course) => navigation.Push(CoursePage.Create(course, navigation.Push));
+        vm.CourseOpened += (_, course) => navigation.Push(CoursePage.Create(course));
+        Navigation = navigation;
         Root = navigation;
     }
 

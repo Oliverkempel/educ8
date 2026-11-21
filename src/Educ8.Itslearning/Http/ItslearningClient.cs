@@ -149,6 +149,35 @@ public sealed class ItslearningClient(HttpClient http)
         return new Content.DownloadedFile(name, response.Content.Headers.ContentType?.MediaType, buffer.ToArray());
     }
 
+    /// <summary>
+    /// Saves a file from a REST endpoint that redirects to the file (assignment, answer and feedback files) into
+    /// <paramref name="directory"/>, streaming (no size cap). Written to a <c>.part</c> file first, so a cancelled or failed download
+    /// leaves nothing behind. Returns the saved path. The signed file URL it redirects to is never logged.
+    /// </summary>
+    public async Task<string> SaveAsync(string relativePath, string directory, string fallbackName, CancellationToken ct = default)
+    {
+        using var response = await http.GetAsync(relativePath, HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false);
+        await EnsureSuccessAsync(response, relativePath, ct).ConfigureAwait(false);
+        var disposition = response.Content.Headers.ContentDisposition;
+        var name = Content.LearningToolContentReader.SafeFileName(disposition?.FileNameStar ?? disposition?.FileName?.Trim('"') ?? fallbackName, 0);
+        Directory.CreateDirectory(directory);
+        var path = Path.Combine(directory, name);
+        var partial = path + ".part";
+        try
+        {
+            await using (var stream = await response.Content.ReadAsStreamAsync(ct).ConfigureAwait(false))
+            await using (var file = File.Create(partial))
+                await stream.CopyToAsync(file, ct).ConfigureAwait(false);
+            File.Move(partial, path, overwrite: true);
+        }
+        catch
+        {
+            File.Delete(partial);
+            throw;
+        }
+        return path;
+    }
+
     // ---- Calendar ----
 
     /// <summary>Upper bound on calendar pages fetched per call (100 events each).</summary>

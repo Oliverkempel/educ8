@@ -1,3 +1,4 @@
+using Educ8.App.Core.Elements;
 using Educ8.App.Core.Presentation;
 using Educ8.App.Core.Resources;
 using Educ8.App.Core.ViewModels;
@@ -13,15 +14,14 @@ namespace Educ8.App.Gtk.Views;
 /// </summary>
 internal static class CoursePage
 {
-    public static Adw.NavigationPage Create(CourseViewModel vm, Action<Adw.NavigationPage> push)
+    public static Adw.NavigationPage Create(CourseViewModel vm)
     {
         var stack = Adw.ViewStack.New();
-        // Material rows on this page go through the course: folders open as pages, the rest opens as usual.
-        vm.FolderOpened += (_, folder) => push(Folder(folder, push));
-        Func<MaterialItemViewModel, Widget> material = m => MaterialRows.Row(m, () => vm.OpenItemCommand.Execute(m));
+        // Material rows open through their element modules (folders and pages in the app, files in the default app, …).
+        Func<MaterialItemViewModel, Widget> material = MaterialRows.Row;
         stack.AddTitledWithIcon(Overview(vm, material), "overview", vm.OverviewTitle, "view-list-symbolic");
         stack.AddTitledWithIcon(AllPlans(vm.AllPlans, material), "plans", vm.AllPlans.Title, Icons.Name(AppIcon.LearningPath));
-        stack.AddTitledWithIcon(FolderContent(vm.Resources, push), "resources", vm.Resources.Title, Icons.Name(AppIcon.Folder));
+        stack.AddTitledWithIcon(Elements.FolderPage.Content(vm.Resources), "resources", vm.Resources.Title, Icons.Name(AppIcon.Folder));
         // Tabs other than the overview load the first time they're shown.
         stack.OnNotify += (sender, e) =>
         {
@@ -67,23 +67,6 @@ internal static class CoursePage
         bin.AddBreakpoint(narrow);
 
         var page = Adw.NavigationPage.New(bin, vm.Title);
-        _ = vm.EnsureLoadedAsync();
-        return page;
-    }
-
-    /// <summary>A subfolder: its own page with the folder's name as title.</summary>
-    public static Adw.NavigationPage Folder(FolderViewModel vm, Action<Adw.NavigationPage> push)
-    {
-        var refresh = IconButton(Icons.Name(AppIcon.Refresh), Strings.Refresh);
-        Bind.Command(refresh, vm.RefreshCommand);
-        var header = Adw.HeaderBar.New();
-        header.PackEnd(refresh);
-
-        var toolbar = Adw.ToolbarView.New();
-        toolbar.AddTopBar(header);
-        toolbar.SetContent(FolderContent(vm, push));
-
-        var page = Adw.NavigationPage.New(toolbar, vm.Title);
         _ = vm.EnsureLoadedAsync();
         return page;
     }
@@ -203,42 +186,5 @@ internal static class CoursePage
         Bind.Property(section, Rebuild, nameof(CourseSection<T>.IsLoading), nameof(CourseSection<T>.EmptyText));
         Bind.Collection(section.Items, Rebuild);
         return group;
-    }
-
-    /// <summary>A folder's items as a boxed list, with loading, error and empty states. Folders push a new page.</summary>
-    private static Widget FolderContent(FolderViewModel vm, Action<Adw.NavigationPage> push)
-    {
-        vm.FolderOpened += (_, child) => push(Folder(child, push));
-
-        var list = ListBox.New();
-        list.AddCssClass("boxed-list");
-        list.SetSelectionMode(SelectionMode.None);
-        list.SetValign(Align.Start);
-        Bind.Collection(vm.Items, () =>
-        {
-            list.RemoveAll();
-            foreach (var item in vm.Items) list.Append(MaterialRows.Row(item, () => vm.OpenCommand.Execute(item)));
-        });
-
-        var listPage = VBox(0, list);
-        listPage.SetMarginTop(24);
-        listPage.SetMarginBottom(24);
-        listPage.SetMarginStart(18);
-        listPage.SetMarginEnd(18);
-
-        var message = Adw.StatusPage.New();
-        message.SetIconName(Icons.Name(AppIcon.Folder));
-
-        var states = Stack.New();
-        states.AddNamed(Spinner(48), "loading");
-        states.AddNamed(message, "message");
-        states.AddNamed(Scrolled(Clamp(listPage, 900)), "list");
-        Bind.Property(vm, () =>
-        {
-            message.SetTitle(vm.ErrorMessage ?? vm.EmptyText ?? "");
-            states.SetVisibleChildName(vm.IsLoading && vm.Items.Count == 0 ? "loading"
-                : vm.ErrorMessage is not null || vm.EmptyText is not null ? "message" : "list");
-        }, nameof(FolderViewModel.IsLoading), nameof(FolderViewModel.ErrorMessage), nameof(FolderViewModel.EmptyText));
-        return states;
     }
 }

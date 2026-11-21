@@ -109,6 +109,19 @@ public static class WebPageParsers
         return null;
     }
 
+    /// <summary>
+    /// The element a link on the itslearning site points at, if any: <c>ViewLearningToolElement.aspx?LearningToolElementId=</c>,
+    /// <c>ContentArea.aspx?…ElementID=</c>, <c>main.aspx?ElementID=</c>, and folders (<c>…folder…?FolderID=</c>; a folder's id is
+    /// its element id). Links to other hosts give null.
+    /// </summary>
+    public static int? ElementIdFromUrl(Uri url, Uri? site)
+    {
+        if (site is null || !url.IsAbsoluteUri || !string.Equals(url.Host, site.Host, StringComparison.OrdinalIgnoreCase)) return null;
+        var id = QueryValue(url, "LearningToolElementId") ?? QueryValue(url, "ElementID")
+            ?? (url.AbsolutePath.Contains("folder", StringComparison.OrdinalIgnoreCase) ? QueryValue(url, "FolderID") : null);
+        return int.TryParse(id, out var elementId) && elementId > 0 ? elementId : null;
+    }
+
     /// <summary>True if the response is the itslearning web view (not a login/logout page).</summary>
     public static bool IsElementView(Uri finalUri) =>
         finalUri.AbsolutePath.Contains("ViewLearningToolElement", StringComparison.OrdinalIgnoreCase);

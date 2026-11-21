@@ -127,8 +127,8 @@ internal sealed class CoursesView
         // Course pages (and their folders) are pushed on top of the grid, with the standard back button.
         var navigation = Adw.NavigationView.New();
         navigation.Add(Adw.NavigationPage.New(toolbar, Strings.CoursesTitle));
-        vm.CourseOpened += (_, course) => navigation.Push(CoursePage.Create(course, navigation.Push));
-        vm.PlanOpened += (_, plan) => navigation.Push(PlanPage.Create(plan, navigation.Push));
+        vm.CourseOpened += (_, course) => navigation.Push(CoursePage.Create(course));
+        vm.PlanOpened += (_, plan) => navigation.Push(PlanPage.Create(plan));
         Navigation = navigation;
         Root = navigation;
     }

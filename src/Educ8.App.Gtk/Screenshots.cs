@@ -67,7 +67,10 @@ internal static class Screenshots
                 await Until(() => !course!.Resources.IsLoading && (course.Resources.Items.Count > 0 || course.Resources.EmptyText is not null || course.Resources.ErrorMessage is not null));
                 await Task.Delay(800);
                 await Save(main.Window, Path.Combine(dir, "course-resources.png"));
+                await ElementTourAsync(shell, main, course!.Resources, dir);
                 main.Courses.Navigation.Pop();
+                await Task.Delay(500);
+                await AssignmentShotAsync(shell, main, dir);
                 await Task.Delay(500);
             }
 
@@ -140,6 +143,84 @@ internal static class Screenshots
         {
             app.Quit();
         }
+    }
+
+    /// <summary>
+    /// One screenshot per in-app element kind, from the first matches in the course's folders (searched breadth-first, a few
+    /// listings at most). Read-only: only modules that open inside the app are used (never links, which launch the browser),
+    /// and nothing is submitted or marked.
+    /// </summary>
+    private static async Task ElementTourAsync(ShellViewModel shell, MainWindow main, Core.Elements.FolderViewModel root, string dir)
+    {
+        var navigator = shell.Elements;
+        var wanted = new (string File, Func<Core.Elements.ElementRef, bool> Match)[]
+        {
+            ("folder.png", e => e.Kind == Itslearning.Models.ResourceKind.Folder),
+            ("page.png", e => e.IsTool(Itslearning.Models.LearningTools.Page)),
+            ("learning-path.png", e => e.Kind == Itslearning.Models.ResourceKind.LearningPath),
+            ("activity.png", e => e.Kind == Itslearning.Models.ResourceKind.Activity),
+            ("assignment.png", e => e.IsTool(Itslearning.Models.LearningTools.Assignment)),
+        };
+        var found = new Dictionary<string, Core.Elements.ElementRef>();
+        var folders = new Queue<Core.Elements.FolderViewModel>([root]);
+        for (var listings = 0; folders.Count > 0 && listings < 10 && found.Count < wanted.Length; listings++)
+        {
+            var folder = folders.Dequeue();
+            await folder.EnsureLoadedAsync();
+            foreach (var element in folder.Items.Select(i => i.Element))
+            {
+                foreach (var (file, match) in wanted)
+                    if (!found.ContainsKey(file) && match(element) && navigator.StyleOf(element) == Core.Elements.OpenStyle.InApp)
+                        found[file] = element;
+                if (element.Kind == Itslearning.Models.ResourceKind.Folder
+                    && await navigator.ModuleFor(element)!.OpenAsync(element, navigator, CancellationToken.None) is Core.Elements.FolderViewModel sub)
+                    folders.Enqueue(sub);
+            }
+        }
+        foreach (var (file, element) in found) await ShowElementAsync(shell, main, element, Path.Combine(dir, file));
+    }
+
+    /// <summary>An assignment from the first courses' open tasks or recent changes (read-only, plus the empty hand-in dialog).</summary>
+    private static async Task AssignmentShotAsync(ShellViewModel shell, MainWindow main, string dir)
+    {
+        if (File.Exists(Path.Combine(dir, "assignment.png"))) return;
+        foreach (var card in shell.Courses.Courses.Take(6))
+        {
+            CourseViewModel? course = null;
+            void Opened(object? sender, CourseViewModel c) => course = c;
+            shell.Courses.CourseOpened += Opened;
+            shell.Courses.OpenCourseCommand.Execute(card);
+            shell.Courses.CourseOpened -= Opened;
+            await Until(() => course is { IsLoading: false });
+            var assignment = course!.Tasks.Items.Concat(course.Changes.Items)
+                .FirstOrDefault(i => i.Element.IsTool(Itslearning.Models.LearningTools.Assignment));
+            main.Courses.Navigation.Pop();
+            await Task.Delay(300);
+            if (assignment is null) continue;
+            await ShowElementAsync(shell, main, assignment.Element, Path.Combine(dir, "assignment.png"));
+            return;
+        }
+    }
+
+    private static async Task ShowElementAsync(ShellViewModel shell, MainWindow main, Core.Elements.ElementRef element, string path)
+    {
+        var navigator = shell.Elements;
+        if (await navigator.ModuleFor(element)!.OpenAsync(element, navigator, CancellationToken.None) is not { } page) return;
+        navigator.Show(page);
+        await Until(() => page.State != Core.Elements.ElementPageState.Loading && !page.IsLoading);
+        await Task.Delay(1000);
+        await Save(main.Window, path);
+        // The hand-in dialog, empty. Never Review or Submit here: those hand in for real.
+        if (page is Core.Elements.AssignmentViewModel { CanHandIn: true } assignment)
+        {
+            assignment.StartHandInCommand.Execute(null);
+            await Task.Delay(800);
+            await Save(main.Window, Path.Combine(Path.GetDirectoryName(path)!, "hand-in.png"));
+            First<Adw.Dialog>(main.Window)?.ForceClose();
+            await Task.Delay(300);
+        }
+        main.Courses.Navigation.Pop();
+        await Task.Delay(300);
     }
 
     private static T? First<T>(global::Gtk.Widget root) where T : global::Gtk.Widget

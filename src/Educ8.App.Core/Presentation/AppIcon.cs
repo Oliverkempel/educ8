@@ -14,6 +14,12 @@ public enum AppIcon
     Search,
     SignOut,
     OpenExternal,
+    OpenInApp,
+    Video,
+    Audio,
+    Image,
+    Embed,
+    Table,
     CancelDownload,
     PreviousWeek,
     NextWeek,
@@ -60,5 +66,14 @@ public static class AppIcons
         ResourceKind.Activity => AppIcon.Activity,
         ResourceKind.LearningPath => AppIcon.LearningPath,
         _ => AppIcon.Other,
+    };
+
+    /// <summary>Icon for a part of page content shown as a placeholder.</summary>
+    public static AppIcon For(Documents.RichUnsupportedKind kind) => kind switch
+    {
+        Documents.RichUnsupportedKind.Video => AppIcon.Video,
+        Documents.RichUnsupportedKind.Audio => AppIcon.Audio,
+        Documents.RichUnsupportedKind.Table => AppIcon.Table,
+        _ => AppIcon.Embed,
     };
 }

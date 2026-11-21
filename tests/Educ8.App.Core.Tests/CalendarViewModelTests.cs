@@ -1,4 +1,5 @@
 using System.Net;
+using Educ8.App.Core.Elements;
 using Educ8.App.Core.Services;
 using Educ8.App.Core.ViewModels;
 using Educ8.Itslearning.Tests;
@@ -156,8 +157,7 @@ public class CalendarViewModelTests
         Assert.Null(file.ErrorMessage);
 
         // A slow download can be cancelled: nothing opens, no error, and it doesn't fall back to the browser.
-        var slow = new MaterialItemViewModel(73, "big.pdf", Itslearning.Models.ResourceKind.File, "https://school.itslearning.com/x", h.OpenUrl,
-            h.Provider.GetRequiredService<MaterialFiles>());
+        var slow = h.Elements.Item(new ElementRef(73, "big.pdf", "LearningToolElement", 5009, 10, new Uri("https://school.itslearning.com/x")));
         h.Files.Gate = new TaskCompletionSource();
         var running = slow.OpenCommand.ExecuteAsync(null);
         Assert.True(slow.OpenCommand.IsRunning);

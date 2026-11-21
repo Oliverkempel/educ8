@@ -4,12 +4,13 @@ using Educ8.Itslearning.Content;
 namespace Educ8.App.Core.Services;
 
 /// <summary>
-/// Opens course files in the user's own applications: downloads a File element into the cache folder, then hands it to the
-/// platform. Each file is downloaded once per app session; later clicks reuse the local copy.
+/// Opens course files in the user's own applications: downloads a File element (or an assignment's file) into the cache folder,
+/// then hands it to the platform. Each file is downloaded once per app session; later clicks reuse the local copy.
 /// </summary>
-public sealed class MaterialFiles(ICourseFileSource source, IOpenFile openFile)
+public sealed class MaterialFiles(ICourseFileSource source, IOpenFile openFile, Func<Itslearning.Http.ItslearningClient>? client = null)
 {
     private readonly ConcurrentDictionary<int, string> _downloaded = new();
+    private readonly ConcurrentDictionary<string, string> _restDownloaded = new();
 
     /// <summary>Where downloaded files go (one subfolder per element). Tests point it elsewhere.</summary>
     public string CacheDirectory { get; init; } = DefaultCacheDirectory();
@@ -20,6 +21,21 @@ public sealed class MaterialFiles(ICourseFileSource source, IOpenFile openFile)
         {
             path = await source.SaveFileAsync(elementId, Path.Combine(CacheDirectory, elementId.ToString(System.Globalization.CultureInfo.InvariantCulture)), ct);
             _downloaded[elementId] = path;
+        }
+        openFile.Open(path);
+    }
+
+    /// <summary>
+    /// Opens a file served by a REST path that redirects to it (assignment, answer and feedback files): saved under
+    /// <c>&lt;cache&gt;/&lt;cacheKey&gt;/</c> once per session, then opened in the default application.
+    /// </summary>
+    public async Task OpenRestFileAsync(string relativePath, string cacheKey, string fallbackName, CancellationToken ct = default)
+    {
+        if (client is null) throw new InvalidOperationException("No itslearning client for REST downloads.");
+        if (!_restDownloaded.TryGetValue(relativePath, out var path) || !File.Exists(path))
+        {
+            path = await client().SaveAsync(relativePath, Path.Combine(CacheDirectory, cacheKey), fallbackName, ct);
+            _restDownloaded[relativePath] = path;
         }
         openFile.Open(path);
     }

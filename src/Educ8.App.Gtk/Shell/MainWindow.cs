@@ -32,8 +32,23 @@ internal sealed class MainWindow
         states.SetTransitionType(StackTransitionType.Crossfade);
         states.AddNamed(Spinner(48), "starting");
         states.AddNamed(new WelcomeView(shell).Root, "signedout");
-        states.AddNamed(SignedIn(shell, courses.Root, Calendar.Root, new NotificationsView(shell.Notifications).Root,
+        var notifications = new NotificationsView(shell.Notifications);
+        states.AddNamed(SignedIn(shell, courses.Root, Calendar.Root, notifications.Root,
             (Messages = new MessagesView(shell.Messages)).Root, new McpView(shell.Mcp).Root), "signedin");
+
+        // Element pages (folders, pages, assignments, …) open on top of the section they were opened from.
+        shell.Elements.PageOpened += (_, page) =>
+        {
+            var navigation = shell.CurrentPage switch
+            {
+                AppPage.Courses => courses.Navigation,
+                AppPage.Calendar => Calendar.Navigation,
+                AppPage.Notifications => notifications.Navigation,
+                AppPage.Messages => Messages.Navigation,
+                _ => null,
+            };
+            navigation?.Push(Views.Elements.ElementPages.Create(page));
+        };
         Bind.Property(shell, () => states.SetVisibleChildName(shell.State switch
         {
             ShellState.SignedIn => "signedin",

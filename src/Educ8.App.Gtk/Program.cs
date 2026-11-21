@@ -36,12 +36,14 @@ AppCulture.Apply(AppCulture.Create(System.Globalization.CultureInfo.CurrentCultu
 
 var openUrl = new GtkOpenUrl();
 var openFile = new GtkOpenFile();
+var pickFiles = new GtkPickFiles();
 var services = new ServiceCollection();
 services.AddSingleton(typeof(ILogger<>), typeof(NullLogger<>));
 services.AddItslearning(options);
 services.AddSingleton<IUiDispatcher, GtkDispatcher>();
 services.AddSingleton<IOpenUrl>(openUrl);
 services.AddSingleton<IOpenFile>(openFile);
+services.AddSingleton<IPickFiles>(pickFiles);
 services.AddEduc8AppCore();
 using var provider = services.BuildServiceProvider();
 
@@ -88,7 +90,7 @@ app.OnActivate += (_, _) =>
     }
     var shell = provider.GetRequiredService<ShellViewModel>();
     main = new MainWindow(app, shell);
-    openUrl.Parent = openFile.Parent = main.Window;
+    openUrl.Parent = openFile.Parent = pickFiles.Parent = main.Window;
     main.Window.Present();
     _ = shell.InitializeAsync();
 

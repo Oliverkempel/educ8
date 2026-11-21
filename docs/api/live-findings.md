@@ -138,6 +138,13 @@ Caveats: this is **web scraping of undocumented pages**, so it may break with it
 - `courses/resources/{id}/v1` works for folders too (`ElementType: "Folder"`).
 - `courses/{id}/resources/search/v1` matches **titles** across the whole course tree.
 
+## Element kinds in a student's courses (2026-11-21)
+
+- Folder listings of the 12 most recent courses (120 listings): File 5009 (216), Folder (125), Link 5010 (117), Page 5 (43), CustomActivity (43), Assignment 5006 (12), `Discussion` (5), Survey 5050 (3), Test 5002 (2), tool 5015 (1, unknown). No learning paths.
+- All 43 CustomActivity elements are in the course tasks API (`Active`/`Completed`), but none has a `Description` there. Their `Url` is `main.aspx?CourseID=…&ElementID=…&ElementType=…`.
+- Three links read through the web chain: all had http(s) targets, none had a description, about 1.4 s each (the first read includes the SSO hop).
+- The `Terms` list in `assignments/{e}/settings/v1` is "the list of terms used in course" (academic terms), not terms to accept.
+
 ## Instant messages (2026-11-21)
 
 - The OAuth token works for `instantmessages/*` (the help pages mention an "InstantMessage" scope). `permissions/v1` for a student: can access, reply, star, share and report; no broadcast or send-as-individual.

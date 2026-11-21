@@ -17,3 +17,9 @@ public interface IOpenFile
 {
     void Open(string path);
 }
+
+/// <summary>Lets the user choose files from their computer (the platform's own file dialog). An empty list when they cancel.</summary>
+public interface IPickFiles
+{
+    Task<IReadOnlyList<string>> PickFilesAsync(string title, CancellationToken ct = default);
+}

@@ -1,4 +1,5 @@
 using System.Globalization;
+using Educ8.App.Core.Elements;
 using Educ8.App.Core.Services;
 using Educ8.App.Core.ViewModels;
 using Educ8.Itslearning.Content;
@@ -16,6 +17,7 @@ public sealed class AppTestHost : IDisposable
     public TestServices T { get; } = new();
     public RecordingOpenUrl OpenUrl { get; } = new();
     public RecordingOpenFile OpenFile { get; } = new();
+    public FakePickFiles PickFiles { get; } = new();
     public FakeCourseFileSource Files { get; } = new();
     public string CacheDirectory { get; } = Path.Combine(Path.GetTempPath(), "educ8-tests", Guid.NewGuid().ToString("N"));
     public ServiceProvider Provider { get; }
@@ -26,13 +28,21 @@ public sealed class AppTestHost : IDisposable
         T.Services.AddSingleton<IUiDispatcher>(new ImmediateDispatcher());
         T.Services.AddSingleton<IOpenUrl>(OpenUrl);
         T.Services.AddSingleton<IOpenFile>(OpenFile);
+        T.Services.AddSingleton<IPickFiles>(PickFiles);
         T.Services.AddEduc8AppCore();
         // Registered after AddEduc8AppCore, so these win: no web downloads, and a throwaway cache folder.
         T.Services.AddSingleton<ICourseFileSource>(Files);
-        T.Services.AddSingleton(sp => new MaterialFiles(Files, OpenFile) { CacheDirectory = CacheDirectory });
+        T.Services.AddSingleton(sp => new MaterialFiles(Files, OpenFile, sp.GetRequiredService<Func<Itslearning.Http.ItslearningClient>>()) { CacheDirectory = CacheDirectory });
         T.Services.AddSingleton(sp => new MessageAttachments(OpenFile, OpenUrl) { CacheDirectory = Path.Combine(CacheDirectory, "messages") });
         Provider = T.Build();
+        Elements.PageOpened += (_, page) => Pages.Add(page);
     }
+
+    /// <summary>Opens course elements (rows are created through it).</summary>
+    public ElementNavigator Elements => Provider.GetRequiredService<ElementNavigator>();
+
+    /// <summary>Every in-app element page opened so far, in order.</summary>
+    public List<ElementPageViewModel> Pages { get; } = [];
 
     public ShellViewModel Shell => Provider.GetRequiredService<ShellViewModel>();
     public CoursesViewModel Courses => Provider.GetRequiredService<CoursesViewModel>();
@@ -63,6 +73,13 @@ public sealed class RecordingOpenUrl : IOpenUrl
 {
     public List<Uri> Opened { get; } = [];
     public void Open(Uri url) => Opened.Add(url);
+}
+
+/// <summary>Returns <see cref="Next"/> as the user's choice.</summary>
+public sealed class FakePickFiles : IPickFiles
+{
+    public IReadOnlyList<string> Next { get; set; } = [];
+    public Task<IReadOnlyList<string>> PickFilesAsync(string title, CancellationToken ct = default) => Task.FromResult(Next);
 }
 
 public sealed class RecordingOpenFile : IOpenFile

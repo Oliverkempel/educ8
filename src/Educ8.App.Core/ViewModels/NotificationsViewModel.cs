@@ -17,7 +17,8 @@ namespace Educ8.App.Core.ViewModels;
 /// as a whole (announcements: <see cref="CourseOpened"/>), otherwise in the browser. "Mark all as read" marks every unread one. Those are the app's only writes to itslearning (the user chose them, 2026-11-21).
 /// </summary>
 public sealed partial class NotificationsViewModel(
-    Func<ItslearningClient> client, TimeProvider time, IOpenUrl openUrl, CourseCatalog catalog, CoursePageFactory pages) : ObservableObject
+    Func<ItslearningClient> client, TimeProvider time, IOpenUrl openUrl, CourseCatalog catalog, CoursePageFactory pages, Elements.ElementNavigator elements)
+    : ObservableObject
 {
     /// <summary>Raised with the course page when a notification about a course opens in the app; the platform pushes it.</summary>
     public event EventHandler<CourseViewModel>? CourseOpened;
@@ -104,7 +105,10 @@ public sealed partial class NotificationsViewModel(
     [RelayCommand]
     private async Task OpenAsync(NotificationItemViewModel item)
     {
-        if (!await TryOpenInAppAsync(item) && item.Url is { } url) openUrl.Open(url);
+        if (await TryOpenInAppAsync(item)) { }
+        // About one element (e.g. "Assessment is available for …"): opens like that element (assignments in the app).
+        else if (item.ElementId is { } elementId) await elements.OpenElementAsync(elementId, item.Url);
+        else if (item.Url is { } url) openUrl.Open(url);
         if (item.IsRead) return;
         await MarkReadAsync([item]);
     }
@@ -180,6 +184,7 @@ public sealed partial class NotificationItemViewModel : ObservableObject
         Url = url;
         // About a course as a whole (announcements): shown in the app. About an element (assessment, submission): the browser.
         CourseId = n.ElementId is null ? n.CourseId : null;
+        ElementId = n.ElementId;
         IsRead = n.IsRead;
     }
 
@@ -193,6 +198,9 @@ public sealed partial class NotificationItemViewModel : ObservableObject
 
     /// <summary>Set when the notification opens as a course page in the app.</summary>
     public int? CourseId { get; }
+
+    /// <summary>Set when the notification is about one element (it opens like that element: in the app where a module handles it).</summary>
+    public int? ElementId { get; }
 
     public bool OpensInApp => CourseId is not null;
 

@@ -9,10 +9,9 @@ namespace Educ8.App.Gtk.Views;
 /// <summary>A lesson plan on its own page (from a course card): when, topic, description and material. Header: open the course.</summary>
 internal static class PlanPage
 {
-    public static Adw.NavigationPage Create(PlanPageViewModel vm, Action<Adw.NavigationPage> push)
+    public static Adw.NavigationPage Create(PlanPageViewModel vm)
     {
         var plan = vm.Plan;
-        vm.FolderOpened += (_, folder) => push(CoursePage.Folder(folder, push));
 
         var title = WrapLabel(plan.Name, "title-1");
         var when = Label(plan.WhenText, "dim-label");
@@ -39,7 +38,7 @@ internal static class PlanPage
             var list = ListBox.New();
             list.AddCssClass("boxed-list");
             list.SetSelectionMode(SelectionMode.None);
-            foreach (var m in plan.Material) list.Append(MaterialRows.Row(m, () => vm.OpenItemCommand.Execute(m)));
+            foreach (var m in plan.Material) list.Append(MaterialRows.Row(m));
             material.Add(list);
         }
 

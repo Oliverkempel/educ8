@@ -2,6 +2,14 @@
 
 Newest first. Each entry: date, decision, why.
 
+## 2026-11-21 — Desktop app: course elements as modules, native rich text, hand-in
+
+- **Modules:** course elements open through one module per kind (`src/Educ8.App.Core/Elements/`), matched on element type + learning tool id, with the browser as the built-in fallback. A new itslearning tool is supported by adding a module; nothing else changes. Details: `docs/design/desktop-app-plan.md` ("Course elements in the app").
+- **In the app:** folders, files (default app), pages, links (straight to the target), assignments (read + hand-in). **In the browser:** tests and surveys (no API at all; scraping their stateful, sometimes graded forms is fragile and risky), discussions, external tools, activities (no description in the API), learning paths (unverified), and anything unknown.
+- **Native rich text, no WebKit:** author HTML becomes a `RichDocument` (`HtmlToRichText` in `Educ8.Documents`) that each platform renders with its own text widgets. Author colours and fonts are dropped; videos, embeds, H5P, complex tables and (for now) images show as placeholders with a link. Chosen over an embedded web view to keep that dependency out and to render the same model on all three platforms.
+- **Shared assignment code:** the assignment loader (`AssignmentReader`) and the hand-in rules and sequence (`AssignmentSubmission`) moved from the MCP server into `Educ8.Itslearning`. MCP's `get_assignment` / `submit_assignment` and the app use the same code.
+- **Hand-in from the app** (the user chose it): only on the user's click, through Review → a stock confirm dialog listing exactly what is sent → a fresh re-check of the assignment right before sending → upload → submit. The submit call is never cancelled half-way, and an unclear failure checks whether the answer arrived. Hand-in is off, with the reason shown, when the assignment is closed, already handed in or has a draft, is a group assignment, or its web view (the only reliable "not handed in" signal) couldn't be read. Resubmission and group hand-ins wait for a live test (open questions 7a/7b). Like notifications and messages, this desktop write doesn't go through MCP's write-actions switch.
+
 ## 2026-11-21 — Desktop app: messages
 
 - A Messages page shows itslearning's instant-message conversations (`instantmessages/messagethreads/v4`, newest activity first, paged by `fromSortIndex`) with the number of conversations with unread messages as a sidebar badge (`messagethreads/unread/count/v1`, checked with the notification count). A conversation (`messages/v3`, newest first, paged by `fromId`) is shown oldest at the top.

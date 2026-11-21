@@ -7,6 +7,16 @@ namespace Educ8.Itslearning.Tests;
 
 public class WebPageParserTests
 {
+    [Theory]
+    [InlineData("https://school.itslearning.com/LearningToolElement/ViewLearningToolElement.aspx?LearningToolElementId=2266446", 2266446)]
+    [InlineData("https://school.itslearning.com/ContentArea/ContentArea.aspx?LocationType=1&LocationID=10&ElementID=80&ElementType=131072", 80)]
+    [InlineData("https://SCHOOL.itslearning.com/main.aspx?elementid=72", 72)]
+    [InlineData("https://school.itslearning.com/Folder/processfolder.aspx?FolderID=300", 300)]
+    [InlineData("https://school.itslearning.com/Course/Course.aspx?CourseID=10", null)]
+    [InlineData("https://other.example.com/main.aspx?ElementID=72", null)]
+    public void Finds_element_ids_in_site_links(string url, int? expected) =>
+        Assert.Equal(expected, WebPageParsers.ElementIdFromUrl(new Uri(url), new Uri("https://school.itslearning.com/")));
+
     [Fact]
     public void Finds_signed_tool_iframe_on_view_page()
     {

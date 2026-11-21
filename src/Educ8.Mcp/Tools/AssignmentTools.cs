@@ -86,33 +86,9 @@ public static class AssignmentTools
             return FileTools.Render(file, $"{role} assignment \"{assignment.Title}\" (element {elementId})", pages, includeImages, zipEntry);
         }, ct);
 
-    /// <summary>Gathers REST data and the web view in parallel; parts that fail are reported, not fatal.</summary>
-    internal static async Task<AssignmentInfo> LoadAsync(ItslearningClient client, LearningToolContentReader content, int elementId, CancellationToken ct)
-    {
-        var problems = new List<string>();
-        var detailsTask = client.GetAssignmentAsync(elementId, ct);
-        var elementTask = Optional(() => client.GetResourceAsync(elementId, ct));
-        var settingsTask = Optional(() => client.GetAssignmentSettingsAsync(elementId, ct));
-        var meTask = client.GetCurrentPersonAsync(ct);
-        var viewTask = Optional(() => content.ReadAssignmentViewAsync(elementId, ct));
-        await Task.WhenAll(detailsTask, elementTask, settingsTask, meTask, viewTask);
-
-        var answer = await client.GetAnswerAsync(elementId, meTask.Result.PersonId, ct);
-        IReadOnlyList<AssignmentFile> feedbackFiles = [];
-        if (answer is not null)
-            feedbackFiles = await Optional(() => client.GetFeedbackFilesAsync(elementId, answer.AnswerId, ct)) ?? [];
-        if (viewTask.Result is null)
-            problems.Add("Your status, score and the teacher's feedback couldn't be loaded from the assignment page right now.");
-
-        return new AssignmentInfo(elementTask.Result, detailsTask.Result, settingsTask.Result, answer, feedbackFiles, viewTask.Result, problems);
-    }
-
-    private static async Task<T?> Optional<T>(Func<Task<T>> load) where T : class
-    {
-        try { return await load(); }
-        catch (NotAuthenticatedException) { throw; }
-        catch (Exception e) when (e is ItslearningApiException or ContentUnavailableException or HttpRequestException) { return null; }
-    }
+    /// <summary>The assignment with the student's answer, status and feedback (see <see cref="AssignmentReader"/>).</summary>
+    internal static Task<AssignmentInfo> LoadAsync(ItslearningClient client, LearningToolContentReader content, int elementId, CancellationToken ct) =>
+        client.LoadAssignmentAsync(content, elementId, ct);
 
     private static async Task<List<PersonCourse>> ListCoursesAsync(ItslearningClient client, CancellationToken ct)
     {

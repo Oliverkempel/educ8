@@ -14,7 +14,7 @@ Answered by Phase 0 (2026-11-18): the redirect URI is `itsl-itslearning://login`
 2. **Refresh-token lifetime**: how long the user can stay logged in without signing in again. Observe over days.
 3. **Can a `prompt`/`login_hint`-style parameter preselect the school's Office 365 provider?** It would skip the provider picker. Nice to have.
 4. ~~Can one SSO web session be reused?~~ Yes (2026-11-18). Lifetime is still unknown; expiry is detected and handled with a new SSO.
-4b. Page block kinds other than `text` (files, images, rss, poll) haven't been seen live yet. They're passed through as HTML with a `[kind block]` note. Check them when a course has them.
+4b. (Desktop app: non-text blocks show a placeholder with "Open in itslearning".) Page block kinds other than `text` (files, images, rss, poll) haven't been seen live yet. They're passed through as HTML with a `[kind block]` note. Check them when a course has them.
 
 ## MCP server
 
@@ -27,7 +27,7 @@ Answered by Phase 0 (2026-11-18): the redirect URI is `itsl-itslearning://login`
 6d. ~~No REST endpoint for course files and pages~~. Resolved 2026-11-18 with the SSO web chain (see live-findings.md). Still open: feedback/assessment files on assignments, and teacher-attached assignment `Files` (not yet seen live).
 6e. What is `LearningToolId` 13221 (used for math hand-ins)?
 6f. PowerPoint slides are read as text + embedded images, not rendered. If diagrams drawn with shapes matter, options are rendering through LibreOffice (heavy dependency) or asking teachers for PDFs. Revisit if it's a problem in practice.
-6g. Images embedded in Page content blocks (`filerepository.itslearning.com` URLs) aren't fetched yet; Page images show as `[Image]`.
+6g. (Desktop app: images are placeholders too.) Images embedded in Page content blocks (`filerepository.itslearning.com` URLs) aren't fetched yet; Page images show as `[Image]`.
 
 ## Schedule and updates
 
@@ -39,7 +39,7 @@ Answered by Phase 0 (2026-11-18): the redirect URI is `itsl-itslearning://login`
 ## Write actions
 
 7a. `submit_assignment` hasn't been run for real yet (only preview, plus tests against a fake). Verify on a real assignment, with the user's consent: the multipart field name for `fileupload/temp/v1`, the request body casing, and the response.
-7b. What happens on resubmission? Possibly a new answer version, a replaced answer, or a refusal, depending on the status scale ("Send igen"). Group assignments are untested too.
+7b. (The desktop app only allows a first hand-in on an individual assignment until this is known.) What happens on resubmission? Possibly a new answer version, a replaced answer, or a refusal, depending on the status scale ("Send igen"). Group assignments are untested too.
 7c. Next write candidates: send a message, comment on an announcement, mark notifications read. Each must go in `WriteTools` with the same preview/confirm pattern.
 
 ## API behaviour (verify with live calls)
@@ -52,4 +52,4 @@ Answered by Phase 0 (2026-11-18): the redirect URI is `itsl-itslearning://login`
 
 ## Tests and CI
 
-1. A web-content test (`WebContentTests`: `Finds_signed_tool_iframe_on_view_page` once, `Re_establishes_expired_web_session` once) failed twice in a full-solution run and then passed in 17+ reruns. The cause isn't found. CI keeps the `.trx` results of failed runs (artifact `test-results`) so the next occurrence can be diagnosed. Since tests gate releases, a flaky failure means re-running the workflow.
+1. A web-content test (`WebContentTests`: `Finds_signed_tool_iframe_on_view_page` once, `Re_establishes_expired_web_session` once) failed twice in a full-solution run and then passed in 17+ reruns. `Finds_signed_tool_iframe_on_view_page` failed once more in a full-solution run on 2026-11-21, then passed 5 reruns. The cause isn't found. CI keeps the `.trx` results of failed runs (artifact `test-results`) so the next occurrence can be diagnosed. Since tests gate releases, a flaky failure means re-running the workflow.

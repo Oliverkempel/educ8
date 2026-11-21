@@ -34,6 +34,33 @@ internal sealed class GtkOpenFile : IOpenFile
         () => Gio.AppInfoHelper.LaunchDefaultForUri(new Uri(path).AbsoluteUri, null));
 }
 
+/// <summary>Lets the user pick files with GTK's file dialog (through the desktop portal in Flatpak and snap).</summary>
+internal sealed class GtkPickFiles : IPickFiles
+{
+    public global::Gtk.Window? Parent { get; set; }
+
+    public async Task<IReadOnlyList<string>> PickFilesAsync(string title, CancellationToken ct = default)
+    {
+        var dialog = global::Gtk.FileDialog.New();
+        dialog.SetTitle(title);
+        dialog.SetModal(true);
+        Gio.ListModel? files;
+        try
+        {
+            files = await dialog.OpenMultipleAsync(Parent);
+        }
+        catch (GLib.GException)
+        {
+            return []; // dismissed
+        }
+        if (files is null) return [];
+        var paths = new List<string>();
+        for (uint i = 0; i < files.GetNItems(); i++)
+            if (files.GetObject(i) is Gio.File file && file.GetPath() is { } path) paths.Add(path);
+        return paths;
+    }
+}
+
 internal static class Launch
 {
     private static readonly bool DebugOn = Environment.GetEnvironmentVariable("EDUC8_DEBUG") is "1" or "true";

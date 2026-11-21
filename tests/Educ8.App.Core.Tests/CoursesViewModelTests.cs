@@ -85,10 +85,9 @@ public class CoursesViewModelTests
         Assert.Equal(("Lecture 11", "Web Development, (E26)", 1), (page.Plan.Name, page.CourseTitle, page.CourseId));
 
         // A folder in the plan opens as a folder page; "Open course" opens the course page.
-        FolderViewModel? folder = null;
-        page.FolderOpened += (_, f) => folder = f;
-        page.OpenItemCommand.Execute(page.Plan.Material[0]);
-        Assert.Equal((1, (int?)90, "Week 47"), (folder!.CourseId, folder.FolderId, folder.Title));
+        page.Plan.Material[0].OpenCommand.Execute(null);
+        var folder = Assert.IsType<Elements.FolderViewModel>(h.Pages.Last());
+        Assert.Equal((1, (int?)90, "Week 47"), (folder.CourseId, folder.FolderId, folder.Title));
         CourseViewModel? course = null;
         vm.CourseOpened += (_, c) => course = c;
         page.OpenCourseCommand.Execute(null);

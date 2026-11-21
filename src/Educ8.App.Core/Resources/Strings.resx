@@ -64,6 +64,21 @@
   <data name="OpenFileFailed" xml:space="preserve"><value>Couldn't download the file ({0}). Opened it in itslearning instead.</value></data>
   <data name="Downloading" xml:space="preserve"><value>Downloading…</value></data>
   <data name="CancelDownload" xml:space="preserve"><value>Cancel download</value></data>
+  <data name="ContentVideo" xml:space="preserve"><value>Video</value></data>
+  <data name="ContentAudio" xml:space="preserve"><value>Audio</value></data>
+  <data name="ContentEmbed" xml:space="preserve"><value>Embedded content</value></data>
+  <data name="ContentInteractive" xml:space="preserve"><value>Interactive content</value></data>
+  <data name="ContentTable" xml:space="preserve"><value>Table</value></data>
+  <data name="ContentOther" xml:space="preserve"><value>Content that can't be shown here</value></data>
+  <data name="ContentImage" xml:space="preserve"><value>Image</value></data>
+  <data name="ContentWatch" xml:space="preserve"><value>Watch</value></data>
+  <data name="ContentOpenLink" xml:space="preserve"><value>Open</value></data>
+  <data name="LinkOpen" xml:space="preserve"><value>Open link</value></data>
+  <data name="PageEmpty" xml:space="preserve"><value>This page is empty.</value></data>
+  <data name="PageBlockUnsupported" xml:space="preserve"><value>This part of the page can't be shown here.</value></data>
+  <data name="OpenHere" xml:space="preserve"><value>Open</value></data>
+  <data name="Opening" xml:space="preserve"><value>Opening…</value></data>
+  <data name="OpenHereFailed" xml:space="preserve"><value>Couldn't open it here ({0}). Opened it in itslearning instead.</value></data>
   <data name="OpenFile" xml:space="preserve"><value>Open with the default app</value></data>
   <data name="CourseOverview" xml:space="preserve"><value>Overview</value></data>
   <data name="CourseResources" xml:space="preserve"><value>Resources</value></data>
@@ -76,6 +91,69 @@
   <data name="CourseNoTasks" xml:space="preserve"><value>No open tasks.</value></data>
   <data name="CourseNoChanges" xml:space="preserve"><value>Nothing new in the last two weeks.</value></data>
   <data name="FolderEmpty" xml:space="preserve"><value>This folder is empty.</value></data>
+  <data name="AssignmentDeadline" xml:space="preserve"><value>Deadline</value></data>
+  <data name="AssignmentNoDeadline" xml:space="preserve"><value>No deadline</value></data>
+  <data name="AssignmentInDays" xml:space="preserve"><value>in {0} days</value></data>
+  <data name="AssignmentInHours" xml:space="preserve"><value>in {0} hours</value></data>
+  <data name="AssignmentDeadlinePassed" xml:space="preserve"><value>passed</value></data>
+  <data name="AssignmentLateAllowed" xml:space="preserve"><value>late hand-ins allowed</value></data>
+  <data name="AssignmentSubmissionType" xml:space="preserve"><value>Hand-in</value></data>
+  <data name="AssignmentIndividual" xml:space="preserve"><value>Individual</value></data>
+  <data name="AssignmentGroup" xml:space="preserve"><value>Group</value></data>
+  <data name="AssignmentMaxScore" xml:space="preserve"><value>Max score</value></data>
+  <data name="AssignmentMandatory" xml:space="preserve"><value>Mandatory</value></data>
+  <data name="AssignmentAnonymous" xml:space="preserve"><value>Anonymous</value></data>
+  <data name="AssignmentPeerReview" xml:space="preserve"><value>Peer assessment</value></data>
+  <data name="AssignmentPeerReviewCount" xml:space="preserve"><value>{0} classmates</value></data>
+  <data name="AssignmentYes" xml:space="preserve"><value>Yes</value></data>
+  <data name="AssignmentDescription" xml:space="preserve"><value>Description</value></data>
+  <data name="AssignmentFiles" xml:space="preserve"><value>Files</value></data>
+  <data name="AssignmentTemplate" xml:space="preserve"><value>Template</value></data>
+  <data name="AssignmentYourAnswer" xml:space="preserve"><value>Your answer</value></data>
+  <data name="AssignmentNotHandedIn" xml:space="preserve"><value>Not handed in yet.</value></data>
+  <data name="AssignmentHandedIn" xml:space="preserve"><value>Handed in {0}</value></data>
+  <data name="AssignmentDraft" xml:space="preserve"><value>Draft saved {0}, not handed in</value></data>
+  <data name="AssignmentAssessment" xml:space="preserve"><value>Assessment and feedback</value></data>
+  <data name="AssignmentStatus" xml:space="preserve"><value>Status</value></data>
+  <data name="AssignmentScore" xml:space="preserve"><value>Score</value></data>
+  <data name="AssignmentNotAssessed" xml:space="preserve"><value>Not assessed yet.</value></data>
+  <data name="AssignmentGradingScale" xml:space="preserve"><value>Grading scale</value></data>
+  <data name="AssignmentViewUnavailable" xml:space="preserve"><value>Your status, score and feedback couldn't be loaded right now.</value></data>
+  <data name="HandIn" xml:space="preserve"><value>Hand in…</value></data>
+  <data name="HandInTitle" xml:space="preserve"><value>Hand in “{0}”</value></data>
+  <data name="HandInAnswer" xml:space="preserve"><value>Answer</value></data>
+  <data name="HandInFiles" xml:space="preserve"><value>Files</value></data>
+  <data name="HandInAddFiles" xml:space="preserve"><value>Add files…</value></data>
+  <data name="HandInPickTitle" xml:space="preserve"><value>Choose files to hand in</value></data>
+  <data name="HandInRemoveFile" xml:space="preserve"><value>Remove</value></data>
+  <data name="HandInReview" xml:space="preserve"><value>Review…</value></data>
+  <data name="HandInConfirmTitle" xml:space="preserve"><value>Hand in “{0}”?</value></data>
+  <data name="HandInConfirm" xml:space="preserve"><value>Hand in</value></data>
+  <data name="HandInCancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="HandInWords" xml:space="preserve"><value>Answer text: {0} words</value></data>
+  <data name="HandInNoText" xml:space="preserve"><value>No answer text</value></data>
+  <data name="HandInFileLine" xml:space="preserve"><value>File: {0} ({1})</value></data>
+  <data name="HandInVisible" xml:space="preserve"><value>Teachers will see this, and it may not be possible to undo it.</value></data>
+  <data name="HandInLate" xml:space="preserve"><value>The deadline has passed: this hand-in will be late.</value></data>
+  <data name="HandInUploading" xml:space="preserve"><value>Uploading {0} of {1}…</value></data>
+  <data name="HandInSending" xml:space="preserve"><value>Handing in…</value></data>
+  <data name="HandInDone" xml:space="preserve"><value>Handed in</value></data>
+  <data name="HandInChangedLocally" xml:space="preserve"><value>Your answer changed after the review. Review it again.</value></data>
+  <data name="HandInChangedOnServer" xml:space="preserve"><value>Something changed on itslearning: {0} Nothing was handed in.</value></data>
+  <data name="HandInCancelled" xml:space="preserve"><value>Cancelled. Nothing was handed in.</value></data>
+  <data name="HandInRefused" xml:space="preserve"><value>itslearning refused the hand-in ({0}). Nothing was handed in.</value></data>
+  <data name="HandInUnclear" xml:space="preserve"><value>It's unclear whether it was handed in ({0}). Check in itslearning before trying again.</value></data>
+  <data name="HandInFileMissing" xml:space="preserve"><value>“{0}” can't be read.</value></data>
+  <data name="HandInFileTooLarge" xml:space="preserve"><value>“{0}” is too large ({1}; the limit is {2}).</value></data>
+  <data name="HandInTooManyFiles" xml:space="preserve"><value>At most {0} files can be handed in.</value></data>
+  <data name="HandInTotalTooLarge" xml:space="preserve"><value>The files are too large together (the limit is {0}).</value></data>
+  <data name="HandInClosed" xml:space="preserve"><value>This assignment is closed for hand-ins.</value></data>
+  <data name="HandInNotOpenYet" xml:space="preserve"><value>This assignment isn't open for hand-ins yet.</value></data>
+  <data name="HandInDeadlinePassed" xml:space="preserve"><value>The deadline has passed and late hand-ins aren't allowed.</value></data>
+  <data name="HandInStatusUnknown" xml:space="preserve"><value>Your hand-in status couldn't be checked right now, so handing in from the app is off. Try again later or use itslearning.</value></data>
+  <data name="HandInAlreadyDone" xml:space="preserve"><value>You've already handed in. To hand in again, use itslearning.</value></data>
+  <data name="HandInDraftExists" xml:space="preserve"><value>You have a draft for this assignment in itslearning. Finish it there.</value></data>
+  <data name="HandInGroup" xml:space="preserve"><value>Group assignments can't be handed in from the app yet. Use itslearning.</value></data>
   <data name="DueOn" xml:space="preserve"><value>Due {0}</value></data>
   <data name="DayToday" xml:space="preserve"><value>Today</value></data>
   <data name="DayYesterday" xml:space="preserve"><value>Yesterday</value></data>

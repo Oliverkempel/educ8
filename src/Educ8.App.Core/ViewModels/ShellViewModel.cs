@@ -52,7 +52,7 @@ public sealed partial class ShellViewModel : ObservableObject
     public ShellViewModel(
         TokenManager tokens, Func<ItslearningClient> client, IUiDispatcher dispatcher, CourseCatalog catalog, TimeProvider time,
         LoginViewModel login, CoursesViewModel courses, CalendarViewModel calendar, NotificationsViewModel notifications, MessagesViewModel messages,
-        McpViewModel mcp)
+        McpViewModel mcp, Elements.ElementNavigator elements)
     {
         _tokens = tokens;
         _client = client;
@@ -65,6 +65,7 @@ public sealed partial class ShellViewModel : ObservableObject
         Notifications = notifications;
         Messages = messages;
         Mcp = mcp;
+        Elements = elements;
         _tokens.SessionChanged += (_, _) => _dispatcher.Post(() => _ = InitializeAsync());
     }
 
@@ -73,6 +74,9 @@ public sealed partial class ShellViewModel : ObservableObject
     public CalendarViewModel Calendar { get; }
     public NotificationsViewModel Notifications { get; }
     public MessagesViewModel Messages { get; }
+
+    /// <summary>Opens course elements; in-app element pages are announced with <see cref="Elements.ElementNavigator.PageOpened"/>.</summary>
+    public Elements.ElementNavigator Elements { get; }
     public McpViewModel Mcp { get; }
 
     public IReadOnlyList<NavItem> NavigationItems { get; } =

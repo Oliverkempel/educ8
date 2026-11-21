@@ -169,4 +169,19 @@ public static partial class Texts
         _ => string.Format(CultureInfo.CurrentCulture, Strings.Teachers,
             string.Format(CultureInfo.CurrentCulture, Strings.TeachersMore, string.Join(", ", names.Take(2)), names.Count - 2)),
     };
+
+    /// <summary>The placeholder title for content the app doesn't show ("Video", "Table", …).</summary>
+    public static string Unsupported(Documents.RichUnsupportedKind kind) => kind switch
+    {
+        Documents.RichUnsupportedKind.Video => Strings.ContentVideo,
+        Documents.RichUnsupportedKind.Audio => Strings.ContentAudio,
+        Documents.RichUnsupportedKind.Embed => Strings.ContentEmbed,
+        Documents.RichUnsupportedKind.Interactive => Strings.ContentInteractive,
+        Documents.RichUnsupportedKind.Table => Strings.ContentTable,
+        _ => Strings.ContentOther,
+    };
+
+    /// <summary>The placeholder's button: "Watch" for videos with a link, "Open" for other links, else "Open in itslearning".</summary>
+    public static string UnsupportedAction(Documents.RichUnsupportedKind kind, bool hasLink) =>
+        !hasLink ? Strings.OpenInItslearning : kind is Documents.RichUnsupportedKind.Video ? Strings.ContentWatch : Strings.ContentOpenLink;
 }

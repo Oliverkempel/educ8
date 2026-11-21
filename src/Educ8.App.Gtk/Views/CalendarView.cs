@@ -19,6 +19,9 @@ internal sealed class CalendarView
 
     public Widget Root { get; }
 
+    /// <summary>The navigation stack (calendar → element pages).</summary>
+    public Adw.NavigationView Navigation { get; }
+
     public CalendarView(CalendarViewModel vm)
     {
         _vm = vm;
@@ -118,7 +121,11 @@ internal sealed class CalendarView
         var toolbar = Adw.ToolbarView.New();
         toolbar.AddTopBar(header);
         toolbar.SetContent(split);
-        Root = toolbar;
+
+        // Element pages opened from event details (folders, …) are pushed on top of the calendar.
+        Navigation = Adw.NavigationView.New();
+        Navigation.Add(Adw.NavigationPage.New(toolbar, Strings.NavCalendar));
+        Root = Navigation;
     }
 
     private Widget Day(CalendarDayViewModel day)
