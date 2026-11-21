@@ -9,7 +9,7 @@ using Educ8.Itslearning.Models;
 namespace Educ8.App.Core.Presentation;
 
 /// <summary>Ready-to-show texts shared by all platform UIs. Uses the current culture for dates and times.</summary>
-public static class Texts
+public static partial class Texts
 {
     /// <summary>A friendly message for an exception from itslearning access.</summary>
     public static string Error(Exception e) => e switch
@@ -34,7 +34,7 @@ public static class Texts
             <= 0 => Strings.UpdatedToday,
             1 => Strings.UpdatedYesterday,
             < 7 => string.Format(CultureInfo.CurrentCulture, Strings.UpdatedDaysAgo, days),
-            _ => string.Format(CultureInfo.CurrentCulture, Strings.UpdatedOn, day.ToString("d MMM yyyy", CultureInfo.CurrentCulture)),
+            _ => string.Format(CultureInfo.CurrentCulture, Strings.UpdatedOn, Day(day, weekday: false, year: true)),
         };
     }
 
@@ -49,9 +49,40 @@ public static class Texts
             0 => Strings.DayToday,
             -1 => Strings.DayYesterday,
             1 => Strings.DayTomorrow,
-            _ => local.ToString(local.Year == today.Year ? "ddd d MMM" : "ddd d MMM yyyy", CultureInfo.CurrentCulture),
+            _ => Day(local.DateTime, weekday: true, year: local.Year != today.Year),
         };
         return string.Format(CultureInfo.CurrentCulture, Strings.DateWithTime, day, time);
+    }
+
+    /// <summary>"16 November" (en-GB), "November 16" (en-US): the culture's month-day pattern.</summary>
+    public static string MonthDay(DateTime day) =>
+        day.ToString(CultureInfo.CurrentCulture.DateTimeFormat.MonthDayPattern, CultureInfo.CurrentCulture);
+
+    /// <summary>"16 November 2026" (en-GB), "November 16, 2026" (en-US): the culture's long date without the weekday.</summary>
+    public static string FullDate(DateTime day)
+    {
+        var pattern = LeadingWeekday().Replace(CultureInfo.CurrentCulture.DateTimeFormat.LongDatePattern, "");
+        return day.ToString(pattern.Length > 0 ? pattern : "d", CultureInfo.CurrentCulture);
+    }
+
+    /// <summary>True when the culture writes the day before the month ("16 November"), so a range can share the month.</summary>
+    public static bool DayFirst => CultureInfo.CurrentCulture.DateTimeFormat.MonthDayPattern.TrimStart().StartsWith('d');
+
+    /// <summary>"dddd, " / "dddd " / "dddd 'den' " at the start of a long date pattern.</summary>
+    [System.Text.RegularExpressions.GeneratedRegex(@"^\s*dddd[,.\s]*('[^']*'\s*)?")]
+    private static partial System.Text.RegularExpressions.Regex LeadingWeekday();
+
+    /// <summary>
+    /// A short day in the current culture's order: "Mon 16 Nov" (en-GB), "Mon Nov 16" (en-US), "man. 16. nov." (da-DK). Built
+    /// from the culture's month-day pattern with the month abbreviated; the year is appended when asked.
+    /// </summary>
+    public static string Day(DateTime day, bool weekday, bool year)
+    {
+        var format = CultureInfo.CurrentCulture.DateTimeFormat;
+        var pattern = format.MonthDayPattern.Replace("MMMM", "MMM", StringComparison.Ordinal);
+        if (weekday) pattern = "ddd " + pattern;
+        if (year) pattern += " yyyy";
+        return day.ToString(pattern, CultureInfo.CurrentCulture);
     }
 
     /// <summary>"Tue 17 Nov, 14:00–16:00", or just the day for all-day plans.</summary>
@@ -59,11 +90,11 @@ public static class Texts
     {
         if (start is null) return "";
         if (end is null || end <= start) return Date(start.Value, now, zone);
-        var range = TimeRange(start.Value, end.Value, zone);
         var local = TimeZoneInfo.ConvertTime(start.Value, zone);
         var today = TimeZoneInfo.ConvertTime(now, zone).Date;
-        var day = local.ToString(local.Year == today.Year ? "ddd d MMM" : "ddd d MMM yyyy", CultureInfo.CurrentCulture);
-        return string.Format(CultureInfo.CurrentCulture, Strings.DateWithTime, day, range);
+        if (!IsSameDay(start.Value, end.Value, zone)) return DaysRange(start.Value, end.Value, zone, today.Year);
+        var day = Day(local.DateTime, weekday: true, year: local.Year != today.Year);
+        return string.Format(CultureInfo.CurrentCulture, Strings.DateWithTime, day, TimeRange(start.Value, end.Value, zone));
     }
 
     /// <summary>A friendly MCP client name: "Claude Desktop", "Claude Code", the client's own name, or "MCP client".</summary>
@@ -90,7 +121,31 @@ public static class Texts
         var e = TimeZoneInfo.ConvertTime(end, zone);
         if (s.TimeOfDay == TimeSpan.Zero && e.TimeOfDay == TimeSpan.Zero && e > s) return Strings.AllDay;
         if (s.Date == e.Date) return $"{s.ToString("t", CultureInfo.CurrentCulture)}–{e.ToString("t", CultureInfo.CurrentCulture)}";
-        return $"{s.ToString("g", CultureInfo.CurrentCulture)} – {e.ToString("g", CultureInfo.CurrentCulture)}";
+        return DaysRange(start, end, zone, s.Year);
+    }
+
+    /// <summary>True if the span starts and ends on the same local day (an end at midnight belongs to the day before).</summary>
+    private static bool IsSameDay(DateTimeOffset start, DateTimeOffset end, TimeZoneInfo zone)
+    {
+        var s = TimeZoneInfo.ConvertTime(start, zone);
+        var e = TimeZoneInfo.ConvertTime(end, zone);
+        if (e > s && e.TimeOfDay == TimeSpan.Zero) e = e.AddTicks(-1);
+        return s.Date == e.Date;
+    }
+
+    /// <summary>
+    /// A span over several days: "Mon 16 Nov – Fri 4 Dec" for whole days, otherwise with times ("Mon 16 Nov, 08:00 – Fri 4 Dec, 23:55").
+    /// Years are shown when not <paramref name="year"/>.
+    /// </summary>
+    private static string DaysRange(DateTimeOffset start, DateTimeOffset end, TimeZoneInfo zone, int year)
+    {
+        var s = TimeZoneInfo.ConvertTime(start, zone);
+        var e = TimeZoneInfo.ConvertTime(end, zone);
+        if (s.TimeOfDay == TimeSpan.Zero && e.TimeOfDay == TimeSpan.Zero)
+            return $"{Day(s.DateTime, true, s.Year != year)} – {Day(e.AddDays(-1).DateTime, true, e.AddDays(-1).Year != year)}";
+        string At(DateTimeOffset d) => string.Format(CultureInfo.CurrentCulture, Strings.DateWithTime,
+            Day(d.DateTime, true, d.Year != year), d.ToString("t", CultureInfo.CurrentCulture));
+        return $"{At(s)} – {At(e)}";
     }
 
     public static string Kind(ResourceKind kind) => kind switch

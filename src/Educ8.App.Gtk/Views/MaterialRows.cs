@@ -19,8 +19,17 @@ internal static class MaterialRows
         row.AddPrefix(Image.NewFromIconName(Icons.Name(m.Icon)));
         var open = Image.NewFromIconName(folder ? "go-next-symbolic" : Icons.Name(AppIcon.OpenExternal));
         var busy = Spinner(16);
+        // While a file downloads, the open icon becomes a stop button that cancels it.
+        var cancel = Button.NewFromIconName(Icons.Name(AppIcon.CancelDownload));
+        cancel.AddCssClass("flat");
+        cancel.AddCssClass("circular");
+        cancel.SetValign(Align.Center);
+        cancel.SetTooltipText(Strings.CancelDownload);
+        cancel.SetVisible(false);
+        Bind.Command(cancel, m.OpenCancelCommand);
         row.AddSuffix(busy);
         row.AddSuffix(open);
+        row.AddSuffix(cancel);
         row.SetActivatable(folder || m.OpensLocally || m.Url is not null);
         if (!folder) row.SetTooltipText(m.OpensLocally ? Strings.OpenFile : Strings.OpenInItslearning);
         row.OnActivated += (_, _) =>
@@ -34,6 +43,7 @@ internal static class MaterialRows
             var running = m.OpenCommand.IsRunning;
             busy.SetVisible(running);
             open.SetVisible(!running);
+            cancel.SetVisible(running);
             row.SetSubtitle(running ? Strings.Downloading : m.ErrorMessage ?? m.SubtitleText);
         }, nameof(m.OpenCommand.IsRunning));
         Bind.Property(m, () => row.SetSubtitle(m.ErrorMessage ?? m.SubtitleText), nameof(MaterialItemViewModel.ErrorMessage));

@@ -208,6 +208,31 @@ public sealed class ItslearningClient(HttpClient http)
         NewestSinceAsync((i, c) => GetAsync<EntityList<Notification>>(
             $"restapi/personal/notifications/v2?PageIndex={i}&PageSize={MaxPageSize}", c), n => n.PublishedDate, since, max, ct);
 
+    /// <summary>How many personal notifications (the bell) are unread.</summary>
+    public Task<int> GetUnreadNotificationCountAsync(CancellationToken ct = default) =>
+        GetAsync<int>("restapi/personal/notifications/unread/count/v1", ct);
+
+    // ---- Messages ----
+
+    /// <summary>The user's conversations, most recently active first. Next page: <paramref name="fromSortIndex"/> = the last thread's SortIndex.</summary>
+    public Task<MessageThreadPage> GetMessageThreadsAsync(long? fromSortIndex = null, int pageSize = 30, CancellationToken ct = default) =>
+        GetAsync<MessageThreadPage>($"restapi/personal/instantmessages/messagethreads/v4?pageSize={Math.Clamp(pageSize, 1, MaxPageSize)}"
+            + (fromSortIndex is { } from ? $"&fromSortIndex={from}" : ""), ct);
+
+    /// <summary>A thread's messages, <b>newest first</b>. Older ones: <paramref name="fromId"/> = the oldest message id so far.</summary>
+    public Task<InstantMessagePage> GetThreadMessagesAsync(int threadId, long? fromId = null, int pageSize = 30, CancellationToken ct = default) =>
+        GetAsync<InstantMessagePage>($"restapi/personal/instantmessages/messagethreads/{threadId}/messages/v3?pageSize={Math.Clamp(pageSize, 1, MaxPageSize)}"
+            + (fromId is { } from ? $"&fromId={from}" : ""), ct);
+
+    /// <summary>How many conversations have unread messages.</summary>
+    public Task<int> GetUnreadThreadCountAsync(CancellationToken ct = default) =>
+        GetAsync<int>("restapi/personal/instantmessages/messagethreads/unread/count/v1", ct);
+
+    /// <summary>People the user may write to, by name (itslearning's e-safety rules apply). Persons that can receive only.</summary>
+    public async Task<List<MessageRecipient>> SearchMessageRecipientsAsync(string searchText, CancellationToken ct = default) =>
+        (await GetAsync<List<MessageRecipient>>($"restapi/personal/instantmessages/recipients/search/v1?searchText={Uri.EscapeDataString(searchText)}", ct).ConfigureAwait(false))
+        .Where(r => r.IsPerson && r.CanReceive).ToList();
+
     /// <summary>The elements behind a grouped update ("X added A and 5 other elements").</summary>
     public async Task<List<ElementLink>> GetNotificationElementsAsync(int notificationId, CancellationToken ct = default) =>
         (await GetAsync<EntityList<ElementLink>>($"restapi/personal/notifications/{notificationId}/elements/v1?PageIndex=0&PageSize={MaxPageSize}", ct).ConfigureAwait(false))
@@ -252,6 +277,67 @@ public sealed class ItslearningClient(HttpClient http)
         await EnsureSuccessAsync(response, path, ct).ConfigureAwait(false);
         var result = await response.Content.ReadFromJsonAsync<SubmitAnswerResponse>(ItslearningJson.Options, ct).ConfigureAwait(false);
         return result?.AnswerId ?? 0;
+    }
+
+    /// <summary>Marks personal notifications (the bell) as read, as opening them on itslearning does.</summary>
+    public async Task MarkNotificationsReadAsync(IEnumerable<int> notificationIds, CancellationToken ct = default)
+    {
+        const string path = "restapi/personal/notifications/v2";
+        var body = notificationIds.Distinct().Select(id => new NotificationReadUpdate(id, true)).ToList();
+        if (body.Count == 0) return;
+        using var response = await http.PutAsJsonAsync(path, body, ItslearningJson.Request, ct).ConfigureAwait(false);
+        await EnsureSuccessAsync(response, path, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>Marks a thread read up to <paramref name="lastMessageId"/> (its newest message), as opening it on itslearning does.</summary>
+    public async Task MarkThreadReadAsync(int threadId, long lastMessageId, CancellationToken ct = default)
+    {
+        var path = $"restapi/personal/instantmessages/messagethreads/{threadId}/updatelastread/{lastMessageId}/v1";
+        using var response = await http.PutAsync(path, null, ct).ConfigureAwait(false);
+        await EnsureSuccessAsync(response, path, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>Sends a message: a reply in <paramref name="threadId"/>, or a new conversation with <paramref name="toPersonIds"/> (itslearning reuses an existing thread with the same people). Returns the thread.</summary>
+    public async Task<MessageThread> SendMessageAsync(int? threadId, IReadOnlyList<int>? toPersonIds, string text, CancellationToken ct = default)
+    {
+        if (threadId is null && (toPersonIds is null || toPersonIds.Count == 0)) throw new ArgumentException("A thread or at least one recipient is needed.");
+        const string path = "restapi/personal/instantmessages/v2";
+        using var response = await http.PostAsJsonAsync(path, new SendMessageRequest(threadId, threadId is null ? toPersonIds : null, text), ItslearningJson.Request, ct)
+            .ConfigureAwait(false);
+        await EnsureSuccessAsync(response, path, ct).ConfigureAwait(false);
+        return await response.Content.ReadFromJsonAsync<MessageThread>(ItslearningJson.Options, ct).ConfigureAwait(false)
+               ?? throw new ItslearningApiException(response.StatusCode, path, "empty response body");
+    }
+
+    /// <summary>
+    /// Downloads a file from the itslearning site itself with the user's login (e.g. a message attachment) into
+    /// <paramref name="directory"/>. Returns null for links elsewhere (the login is never sent to other hosts) or responses that
+    /// aren't a file (an HTML page); the caller then opens the link in the browser.
+    /// </summary>
+    public async Task<string?> TryDownloadSiteFileAsync(Uri url, string directory, string? fileName, CancellationToken ct = default)
+    {
+        if (http.BaseAddress is not { } site || !url.IsAbsoluteUri || url.Scheme != Uri.UriSchemeHttps
+            || !string.Equals(url.Host, site.Host, StringComparison.OrdinalIgnoreCase)) return null;
+        using var response = await http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false);
+        if (!response.IsSuccessStatusCode || response.Content.Headers.ContentType?.MediaType == "text/html") return null;
+        var disposition = response.Content.Headers.ContentDisposition;
+        var name = Content.LearningToolContentReader.SafeFileName(disposition?.FileNameStar ?? disposition?.FileName?.Trim('"') ?? fileName, 0);
+        Directory.CreateDirectory(directory);
+        var path = Path.Combine(directory, name);
+        var partial = path + ".part";
+        try
+        {
+            await using (var stream = await response.Content.ReadAsStreamAsync(ct).ConfigureAwait(false))
+            await using (var file = File.Create(partial))
+                await stream.CopyToAsync(file, ct).ConfigureAwait(false);
+            File.Move(partial, path, overwrite: true);
+        }
+        catch
+        {
+            File.Delete(partial);
+            throw;
+        }
+        return path;
     }
 
     /// <summary>A short-lived URL that signs the user in to the itslearning web UI and opens <paramref name="itslearningUrl"/>.</summary>

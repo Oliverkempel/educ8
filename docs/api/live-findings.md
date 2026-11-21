@@ -115,6 +115,8 @@ Caveats: this is **web scraping of undocumented pages**, so it may break with it
 - `notifications/{notificationId}/elements/v1`: the elements behind a group (`ElementId, ElementType, LearningToolId, Title, Url, Homework`).
 - `notifications/newsfeed/v1`: the same items as the stream but with fewer fields, so it isn't used.
 - `notifications/v2` (the bell): personal items. "Assessment is available for X" (`Type: "Assessment"`) and "<group member> submitted X" carry the element in `ContentUrl` (`…LearningToolElementId=…`). Also "New announcement available in <course>", which duplicates the stream's announcements (same timestamp).
+- Bell links (2026-11-21, 17 items): announcements have `Url` `…/ContentArea/ContentArea.aspx?LocationType=1&LocationID=<courseId>&FromNotification=true` and `ContentUrl` `…/Course/Course.aspx?CourseID=<courseId>` (same id). Assessment and submission items have `Url` `…ContentArea.aspx?LocationType=1&LocationID=<courseId>&ElementID=<id>&ElementType=131072&FromNotification=True` and `ContentUrl` `…/LearningToolElement/ViewLearningToolElement.aspx?LearningToolElementId=<id>`. `LocationType=1` is a course. Both are absolute URLs.
+- A bell notification has no id for what it's about beyond those URLs. The raw JSON (v1 and v2) has only `NotificationId, Text, PublishedDate, PublishedBy, Type, Url, ContentUrl, IsRead, IsAnonymous`, so an announcement notification names the course but not the announcement (no bulletin id). Finding the announcement would mean matching author and time, so the app opens the course page and doesn't pick one (2026-11-21).
 - `notifications/unread/count/v1` and `unseen/count/v1` were both 0 before and after listing. All bell items were already read, so whether listing marks items read isn't proven. A separate `PUT notifications/v2` exists for marking read, which suggests GET doesn't.
 
 ### Lesson plans ↔ material
@@ -135,6 +137,14 @@ Caveats: this is **web scraping of undocumented pages**, so it may break with it
 - `courses/{id}/topics/v1`: `TopicId, TopicName, FolderId, Color, TopicMode`. Topic folders are the week/module folders.
 - `courses/resources/{id}/v1` works for folders too (`ElementType: "Folder"`).
 - `courses/{id}/resources/search/v1` matches **titles** across the whole course tree.
+
+## Instant messages (2026-11-21)
+
+- The OAuth token works for `instantmessages/*` (the help pages mention an "InstantMessage" scope). `permissions/v1` for a student: can access, reply, star, share and report; no broadcast or send-as-individual.
+- `messagethreads/v4?pageSize=&fromSortIndex=` returns `{Threads: EntityList<Thread>, HasMore}`, sorted by `SortIndex` descending. Types seen: `Group`, `OneToOne`, `Collaboration`. Most of a student's threads are teacher/faculty broadcasts with `OnlyThreadAdminCanSendToThread: true`. Each thread carries `LastMessage`, `Participants`, `LastReadInstantMessageId` (unread = last message id > this).
+- `messagethreads/{id}/messages/v3?pageSize=&fromId=` returns `{Messages: EntityList<Message>, HasMore}`, **newest first**. `Text` is plain text (26 messages, no HTML). No attachments in the test account, so the `AttachmentUrl` format is unknown.
+- `recipients/search/v1?searchText=` returns up to 100 persons (`TypeName`, `Id`, `Label`, `Organization`, `CanReceive`).
+- Not tried live (they write): `updatelastread` (no unread threads at the time) and `POST instantmessages/v2`.
 
 ## Desktop sign-in in the default browser (2026-11-21)
 

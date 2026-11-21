@@ -16,12 +16,16 @@ public static class ServiceCollectionExtensions
         // ItslearningClient is a short-lived typed HttpClient: long-lived objects take a factory, never an instance.
         services.AddSingleton<Func<ItslearningClient>>(sp => () => sp.GetRequiredService<ItslearningClient>());
         services.AddSingleton<CourseCatalog>();
+        services.AddSingleton<Services.AppPreferences>();
         services.AddSingleton<Services.MaterialFiles>();
         services.AddSingleton<CoursePageFactory>();
         services.AddSingleton<LoginViewModel>();
         services.AddSingleton<CoursesViewModel>();
         services.AddSingleton<EventDetailsViewModel>();
         services.AddSingleton<CalendarViewModel>();
+        services.AddSingleton<NotificationsViewModel>();
+        services.AddSingleton<Services.MessageAttachments>();
+        services.AddSingleton<MessagesViewModel>();
         services.AddSingleton<McpViewModel>();
         services.AddSingleton<ShellViewModel>();
         return services;

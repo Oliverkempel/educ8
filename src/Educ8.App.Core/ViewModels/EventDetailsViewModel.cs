@@ -159,7 +159,8 @@ public sealed partial class MaterialItemViewModel(
     [ObservableProperty]
     public partial string? ErrorMessage { get; private set; }
 
-    [RelayCommand]
+    /// <summary>Opens the item. While a file downloads, <c>OpenCancelCommand</c> stops it (nothing opens, no partial file stays).</summary>
+    [RelayCommand(IncludeCancelCommand = true)]
     private async Task OpenAsync(CancellationToken ct)
     {
         ErrorMessage = null;

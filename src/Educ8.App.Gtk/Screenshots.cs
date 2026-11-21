@@ -26,14 +26,27 @@ internal static class Screenshots
             await Task.Delay(500);
             await Save(main.Window, Path.Combine(dir, "courses.png"));
 
-            // Keyboard focus on the first card: checks the focus ring.
-            if (First<global::Gtk.FlowBoxChild>(main.Window) is { } card)
+            // The list layout with the first rows expanded (current plans + teachers), then the first current plan's page.
+            var layout = shell.Courses.Layout;
+            shell.Courses.Layout = Core.Services.CoursesLayout.Grid;
+            await Task.Delay(500);
+            await Save(main.Window, Path.Combine(dir, "courses-grid.png"));
+            shell.Courses.Layout = Core.Services.CoursesLayout.List;
+            var expanded = shell.Courses.Courses.Take(3).ToList();
+            foreach (var card in expanded) card.IsExpanded = true;
+            await Until(() => expanded.All(c => !c.ActivePlans.IsLoading));
+            await Task.Delay(800);
+            await Save(main.Window, Path.Combine(dir, "courses-list.png"));
+            if (expanded.FirstOrDefault(c => c.ActivePlans.Items.Count > 0) is { } withPlan)
             {
-                main.Window.SetFocusVisible(true);
-                card.GrabFocus();
+                withPlan.OpenPlanCommand.Execute(withPlan.ActivePlans.Items[0]);
+                await Task.Delay(800);
+                await Save(main.Window, Path.Combine(dir, "plan.png"));
+                main.Courses.Navigation.Pop();
                 await Task.Delay(500);
-                await Save(main.Window, Path.Combine(dir, "courses-focus.png"));
             }
+            foreach (var card in expanded) card.IsExpanded = false;
+            shell.Courses.Layout = layout; // the user's saved choice stays as it was
 
             // A course page: overview, then the Resources tab, then back to the grid.
             if (shell.Courses.Courses.Count > 0)
@@ -57,6 +70,38 @@ internal static class Screenshots
                 main.Courses.Navigation.Pop();
                 await Task.Delay(500);
             }
+
+            // Notifications: listing only (opening one would mark it read on itslearning).
+            shell.CurrentPage = AppPage.Notifications;
+            await Until(() => !shell.Notifications.IsLoading);
+            await Task.Delay(500);
+            await Save(main.Window, Path.Combine(dir, "notifications.png"));
+            // An already-read notification about a course: opens the course page in the app and writes nothing.
+            if (shell.Notifications.Items.FirstOrDefault(n => n.IsRead && n.OpensInApp) is { } announcement)
+            {
+                shell.Notifications.OpenCommand.Execute(announcement);
+                await Task.Delay(2500);
+                await Save(main.Window, Path.Combine(dir, "notification-course.png"));
+            }
+
+            // Messages: the list, a conversation that's already read (opening it writes nothing), and an empty new-conversation form.
+            shell.CurrentPage = AppPage.Messages;
+            await Until(() => !shell.Messages.IsLoading);
+            await Task.Delay(500);
+            await Save(main.Window, Path.Combine(dir, "messages.png"));
+            var read = shell.Messages.Threads.Where(t => !t.IsUnread).ToList();
+            if ((read.FirstOrDefault(t => t.CanReply) ?? read.FirstOrDefault()) is { } thread)
+            {
+                shell.Messages.OpenCommand.Execute(thread);
+                await Task.Delay(2500);
+                await Save(main.Window, Path.Combine(dir, "conversation.png"));
+                main.Messages.Navigation.Pop();
+            }
+            shell.Messages.NewConversationCommand.Execute(null);
+            await Task.Delay(800);
+            await Save(main.Window, Path.Combine(dir, "message-new.png"));
+            main.Messages.Navigation.Pop();
+            await Task.Delay(300);
 
             shell.CurrentPage = AppPage.Mcp;
             await Task.Delay(1000);

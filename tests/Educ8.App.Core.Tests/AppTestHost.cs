@@ -30,6 +30,7 @@ public sealed class AppTestHost : IDisposable
         // Registered after AddEduc8AppCore, so these win: no web downloads, and a throwaway cache folder.
         T.Services.AddSingleton<ICourseFileSource>(Files);
         T.Services.AddSingleton(sp => new MaterialFiles(Files, OpenFile) { CacheDirectory = CacheDirectory });
+        T.Services.AddSingleton(sp => new MessageAttachments(OpenFile, OpenUrl) { CacheDirectory = Path.Combine(CacheDirectory, "messages") });
         Provider = T.Build();
     }
 
@@ -76,10 +77,14 @@ public sealed class FakeCourseFileSource : ICourseFileSource
     public List<int> Downloads { get; } = [];
     public Exception? Fail { get; set; }
 
+    /// <summary>When set, downloads wait for it (or for cancellation), like a slow file.</summary>
+    public TaskCompletionSource? Gate { get; set; }
+
     public async Task<string> SaveFileAsync(int elementId, string directory, CancellationToken ct = default)
     {
         Downloads.Add(elementId);
         if (Fail is not null) throw Fail;
+        if (Gate is not null) await Gate.Task.WaitAsync(ct);
         Directory.CreateDirectory(directory);
         var path = Path.Combine(directory, $"element-{elementId}.pdf");
         await File.WriteAllTextAsync(path, "%PDF-1.4", ct);

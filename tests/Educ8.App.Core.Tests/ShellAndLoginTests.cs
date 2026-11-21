@@ -36,7 +36,7 @@ public class ShellAndLoginTests
 
         Assert.Equal(ShellState.SignedIn, h.Shell.State);
         Assert.Equal("Signed in as Test Student", h.Shell.AccountText);
-        Assert.Equal(["Courses", "Calendar", "MCP server"], h.Shell.NavigationItems.Select(n => n.Title));
+        Assert.Equal(["Courses", "Calendar", "Notifications", "Messages", "MCP server"], h.Shell.NavigationItems.Select(n => n.Title));
         Assert.Equal("Web Development, (E26)", Assert.Single(h.Shell.Courses.Courses).Title);
     }
 

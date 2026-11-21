@@ -1,5 +1,6 @@
 using System.Runtime.Versioning;
 using Educ8.App.Core;
+using Educ8.App.Core.Presentation;
 using Educ8.App.Core.Services;
 using Educ8.App.Core.ViewModels;
 using Educ8.App.Gtk;
@@ -24,6 +25,14 @@ catch (InvalidOperationException e)
     Console.Error.WriteLine(e.Message);
     return 1;
 }
+
+// Gir.Core loads a native library only once its module is initialised; Adw.Application would do it, but the clock setting
+// below is read before that.
+Adw.Module.Initialize();
+
+// Dates and times in the system's formats, including the desktop's 12/24-hour choice (which .NET doesn't read).
+AppCulture.Apply(AppCulture.Create(System.Globalization.CultureInfo.CurrentCulture, Environment.GetEnvironmentVariable,
+    DesktopSettings.Use24HourClock()));
 
 var openUrl = new GtkOpenUrl();
 var openFile = new GtkOpenFile();

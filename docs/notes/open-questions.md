@@ -33,7 +33,8 @@ Answered by Phase 0 (2026-11-18): the redirect URI is `itsl-itslearning://login`
 
 8a. Does `notifications/stream/v2` only cover favourite courses (as documented)? `whats_new` says so and offers a `courseId` fallback. Check with a course that has activity but isn't a favourite.
 8b. Does listing `notifications/v2` mark items read? It couldn't be tested because nothing was unread. Check the unread count before and after when there's an unread notification.
-8c. Next read areas not done yet: announcement history and comments, instant messages (you chose to wait with these).
+8c. Next read areas not done yet: announcement history and comments.
+8d. Messages (desktop app, 2026-11-21): the `AttachmentUrl` format of message attachments (none in the test account), and live confirmation of `updatelastread` and `POST instantmessages/v2` (both unit-tested only, waiting for a real unread message and a send the user does themselves).
 
 ## Write actions
 

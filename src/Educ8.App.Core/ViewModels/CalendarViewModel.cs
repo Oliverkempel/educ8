@@ -52,18 +52,17 @@ public sealed partial class CalendarViewModel : ObservableObject
     /// <summary>"Week 47".</summary>
     public string WeekTitle => string.Format(CultureInfo.CurrentCulture, Strings.WeekNumber, ISOWeek.GetWeekOfYear(WeekStart.AddDays(3).ToDateTime(TimeOnly.MinValue)));
 
-    /// <summary>"16 – 22 November 2026" (culture-formatted).</summary>
+    /// <summary>"16 – 22 November 2026" (en-GB), "November 16 – November 22, 2026" (en-US): in the culture's date order.</summary>
     public string WeekRangeText
     {
         get
         {
-            var end = WeekStart.AddDays(6);
-            var culture = CultureInfo.CurrentCulture;
-            if (WeekStart.Year != end.Year) // week across New Year: both years
-                return $"{WeekStart.ToString("d MMMM yyyy", culture)} – {end.ToString("d MMMM yyyy", culture)}";
-            return WeekStart.Month == end.Month
-                ? $"{WeekStart.Day} – {end.ToString("d MMMM yyyy", culture)}"
-                : $"{WeekStart.ToString("d MMMM", culture)} – {end.ToString("d MMMM yyyy", culture)}";
+            var start = WeekStart.ToDateTime(TimeOnly.MinValue);
+            var end = WeekStart.AddDays(6).ToDateTime(TimeOnly.MinValue);
+            if (start.Year != end.Year) return $"{Texts.FullDate(start)} – {Texts.FullDate(end)}"; // across New Year: both years
+            return start.Month == end.Month && Texts.DayFirst
+                ? $"{start.Day} – {Texts.FullDate(end)}"
+                : $"{Texts.MonthDay(start)} – {Texts.FullDate(end)}";
         }
     }
 
@@ -231,7 +230,7 @@ public sealed class CalendarDayViewModel(DateOnly date, bool isToday, bool isPas
     public string DayName { get; } = CultureInfo.CurrentCulture.DateTimeFormat.GetDayName(date.DayOfWeek);
 
     /// <summary>"16 November".</summary>
-    public string DateText { get; } = date.ToString("d MMMM", CultureInfo.CurrentCulture);
+    public string DateText { get; } = Texts.MonthDay(date.ToDateTime(TimeOnly.MinValue));
 
     public bool IsToday { get; } = isToday;
     public bool IsPast { get; } = isPast;

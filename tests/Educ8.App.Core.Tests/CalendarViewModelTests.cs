@@ -1,5 +1,8 @@
 using System.Net;
+using Educ8.App.Core.Services;
+using Educ8.App.Core.ViewModels;
 using Educ8.Itslearning.Tests;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Educ8.App.Core.Tests;
 
@@ -151,6 +154,21 @@ public class CalendarViewModelTests
         Assert.Equal(2, h.OpenFile.Opened.Count);
         Assert.All(h.OpenFile.Opened, path => Assert.Equal(Path.Combine(h.CacheDirectory, "72", "element-72.pdf"), path));
         Assert.Null(file.ErrorMessage);
+
+        // A slow download can be cancelled: nothing opens, no error, and it doesn't fall back to the browser.
+        var slow = new MaterialItemViewModel(73, "big.pdf", Itslearning.Models.ResourceKind.File, "https://school.itslearning.com/x", h.OpenUrl,
+            h.Provider.GetRequiredService<MaterialFiles>());
+        h.Files.Gate = new TaskCompletionSource();
+        var running = slow.OpenCommand.ExecuteAsync(null);
+        Assert.True(slow.OpenCommand.IsRunning);
+        Assert.True(slow.OpenCancelCommand.CanExecute(null));
+        slow.OpenCancelCommand.Execute(null);
+        await running;
+        Assert.False(slow.OpenCommand.IsRunning);
+        Assert.Equal(2, h.OpenFile.Opened.Count);
+        Assert.Empty(h.OpenUrl.Opened);
+        Assert.Null(slow.ErrorMessage);
+        h.Files.Gate = null;
 
         d.OpenInItslearningCommand.Execute(null);
         Assert.Equal(["https://school.itslearning.com/Course/Course.aspx?CourseID=10&EventId=2"], h.OpenUrl.Opened.Select(u => u.ToString()));

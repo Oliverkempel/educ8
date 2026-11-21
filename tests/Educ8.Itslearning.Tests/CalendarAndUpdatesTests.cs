@@ -91,4 +91,22 @@ public class CalendarAndUpdatesTests
         Assert.Equal(420060, Assert.Single(e.PlanLinks).PlanId);
         Assert.True(e.HasMoreContent);
     }
+
+    [Fact]
+    public async Task Unread_count_and_marking_notifications_read()
+    {
+        using var t = new TestServices();
+        t.SignedIn();
+        t.Http.Respond = (req, _) => req.Method == HttpMethod.Get ? FakeItslearning.Json("3") : new HttpResponseMessage(HttpStatusCode.OK);
+        using var sp = t.Build();
+        var client = sp.GetRequiredService<ItslearningClient>();
+
+        Assert.Equal(3, await client.GetUnreadNotificationCountAsync());
+        await client.MarkNotificationsReadAsync([7, 9, 7]);
+        await client.MarkNotificationsReadAsync([]); // nothing to send
+
+        var put = Assert.Single(t.Http.Requests, r => r.Method == HttpMethod.Put);
+        Assert.Equal("/restapi/personal/notifications/v2", put.PathAndQuery);
+        Assert.Equal("""[{"NotificationId":7,"IsRead":true},{"NotificationId":9,"IsRead":true}]""", put.Body);
+    }
 }

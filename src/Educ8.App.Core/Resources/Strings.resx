@@ -63,6 +63,7 @@
   <data name="EventLinkedMaterial" xml:space="preserve"><value>Linked material</value></data>
   <data name="OpenFileFailed" xml:space="preserve"><value>Couldn't download the file ({0}). Opened it in itslearning instead.</value></data>
   <data name="Downloading" xml:space="preserve"><value>Downloading…</value></data>
+  <data name="CancelDownload" xml:space="preserve"><value>Cancel download</value></data>
   <data name="OpenFile" xml:space="preserve"><value>Open with the default app</value></data>
   <data name="CourseOverview" xml:space="preserve"><value>Overview</value></data>
   <data name="CourseResources" xml:space="preserve"><value>Resources</value></data>
@@ -82,6 +83,40 @@
   <data name="DateWithTime" xml:space="preserve"><value>{0}, {1}</value></data>
   <data name="MoreItems" xml:space="preserve"><value>{0} items</value></data>
   <data name="Pinned" xml:space="preserve"><value>Pinned</value></data>
+  <data name="CourseActivePlans" xml:space="preserve"><value>Current plans</value></data>
+  <data name="CourseNoActivePlans" xml:space="preserve"><value>No current plans</value></data>
+  <data name="CoursesGridView" xml:space="preserve"><value>Grid</value></data>
+  <data name="CoursesListView" xml:space="preserve"><value>List</value></data>
+  <data name="CourseShowDetails" xml:space="preserve"><value>Show current plans and teachers</value></data>
+  <data name="NavMessages" xml:space="preserve"><value>Messages</value></data>
+  <data name="MessagesNone" xml:space="preserve"><value>No conversations</value></data>
+  <data name="MessagesUntitled" xml:space="preserve"><value>Conversation</value></data>
+  <data name="MessagesYou" xml:space="preserve"><value>You</value></data>
+  <data name="MessagesPreview" xml:space="preserve"><value>{0}: {1}</value></data>
+  <data name="MessagesRepliesOff" xml:space="preserve"><value>Replies are turned off in this conversation.</value></data>
+  <data name="MessagesSendFailed" xml:space="preserve"><value>The message wasn't sent: {0}</value></data>
+  <data name="MessagesMarkReadFailed" xml:space="preserve"><value>Couldn't mark the conversation as read on itslearning: {0}</value></data>
+  <data name="MessagesDeleted" xml:space="preserve"><value>This message was deleted.</value></data>
+  <data name="MessagesAttachment" xml:space="preserve"><value>Attachment</value></data>
+  <data name="MessagesNoOneFound" xml:space="preserve"><value>No one found</value></data>
+  <data name="MessagesNew" xml:space="preserve"><value>New conversation</value></data>
+  <data name="MessagesTo" xml:space="preserve"><value>To</value></data>
+  <data name="MessagesSearchPeople" xml:space="preserve"><value>Search for people</value></data>
+  <data name="MessagesWrite" xml:space="preserve"><value>Write a message…</value></data>
+  <data name="MessagesSend" xml:space="preserve"><value>Send</value></data>
+  <data name="MessagesLoadOlder" xml:space="preserve"><value>Show older messages</value></data>
+  <data name="MessagesLoadMore" xml:space="preserve"><value>Show more conversations</value></data>
+  <data name="MessagesRemoveRecipient" xml:space="preserve"><value>Remove</value></data>
+  <data name="MessagesUnread" xml:space="preserve"><value>Unread messages</value></data>
+  <data name="NavNotifications" xml:space="preserve"><value>Notifications</value></data>
+  <data name="NotificationsNone" xml:space="preserve"><value>No notifications</value></data>
+  <data name="NotificationsMarkAllRead" xml:space="preserve"><value>Mark all as read</value></data>
+  <data name="NotificationsMarkReadFailed" xml:space="preserve"><value>Couldn't mark it as read on itslearning: {0}</value></data>
+  <data name="NotificationUnread" xml:space="preserve"><value>Unread</value></data>
+  <data name="NotificationOpenCourseHint" xml:space="preserve"><value>Open the course and mark as read</value></data>
+  <data name="NotificationOpenHint" xml:space="preserve"><value>Open in itslearning and mark as read</value></data>
+  <data name="CourseTeachers" xml:space="preserve"><value>Teachers</value></data>
+  <data name="PlanOpenCourse" xml:space="preserve"><value>Open course</value></data>
   <data name="CourseOpenHint" xml:space="preserve"><value>Open the course page</value></data>
   <data name="CoursePlansTab" xml:space="preserve"><value>Plans</value></data>
   <data name="PlanNoDate" xml:space="preserve"><value>No date</value></data>

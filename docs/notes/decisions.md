@@ -2,6 +2,25 @@
 
 Newest first. Each entry: date, decision, why.
 
+## 2026-11-21 — Desktop app: messages
+
+- A Messages page shows itslearning's instant-message conversations (`instantmessages/messagethreads/v4`, newest activity first, paged by `fromSortIndex`) with the number of conversations with unread messages as a sidebar badge (`messagethreads/unread/count/v1`, checked with the notification count). A conversation (`messages/v3`, newest first, paged by `fromId`) is shown oldest at the top.
+- **Writes, by the user's choice (read, reply, start conversations; mark read):** opening a conversation marks it read up to its newest message (`PUT messagethreads/{id}/updatelastread/{messageId}/v1`); replies and new conversations are sent with `POST instantmessages/v2` (`{InstantMessageThreadId, Text}` or `{ToPersonIds, Text}`; itslearning reuses an existing thread with the same people). Sending happens only on the user's Send. A failed send keeps the draft. Teacher broadcasts (`OnlyThreadAdminCanSendToThread`) show "Replies are turned off" instead of the reply box.
+- New conversations pick people with `instantmessages/recipients/search/v1` (persons who can receive; first 25 shown).
+- Attachments on received messages open in the default app when the link is on the itslearning site (downloaded with the user's login into the cache); other links open in the browser. `ItslearningClient.TryDownloadSiteFileAsync` never sends the login to another host. The attachment link format hasn't been seen live yet. Sending attachments isn't included.
+
+## 2026-11-21 — Desktop app: notifications page that marks read
+
+- A Notifications page lists itslearning's personal notifications (the bell, `notifications/v2`), newest first, with the unread count (`notifications/unread/count/v1`) as a badge on the sidebar entry. The count is checked at sign-in and every 5 minutes while signed in; the list loads whenever the page is opened. No desktop pop-ups (the user chose the in-app page only).
+- **The app writes to itslearning here, by the user's choice:** opening a notification marks it read (`PUT notifications/v2` with `[{NotificationId, IsRead: true}]`), and "Mark all as read" marks every unread one in the list, as the website does. These are the desktop app's only writes. They're not MCP tools, so the MCP `AllowWriteActions` gate doesn't apply; they happen only on the user's click. A failed mark-read shows an error and leaves the item unread (the page still opens).
+- Where it opens (changed the same day at the user's request): a notification about a course as a whole (announcements: `ContentUrl` `Course.aspx?CourseID=…`, `Url` `ContentArea.aspx?LocationType=1&LocationID=…`) opens that course's page in the app, pushed onto the Notifications page. Notifications about one element (assessments, group submissions: `ElementID` in the URLs) open their `Url` in the browser, since the app has no assignment view. If the course isn't in the user's course list, the browser is used too.
+
+## 2026-11-21 — Dates and times in the system's formats
+
+- The app formats with the system's culture, including what .NET misses on Linux: `LC_TIME`/`LC_NUMERIC` (GNOME "Formats"; .NET only reads `LANG`/`LC_ALL`) and the desktop's 12/24-hour choice (GNOME `clock-format`, independent of the locale; `en_US` with a 24-hour clock showed AM/PM). `AppCulture.Create` builds the culture; the GTK app reads `clock-format` through the settings portal (works in Flatpak and snap), falling back to GSettings. Read once at startup.
+- No hard-coded day/month order: `Texts.Day`, `MonthDay` and `FullDate` derive from the culture's month-day and long-date patterns (en-US "Mon Nov 16", en-GB "Mon 16 Nov", da-DK "man. 16. nov.").
+- Windows and macOS: .NET's culture already includes the user's regional overrides there, so they pass no clock preference.
+
 ## 2026-11-21 — Desktop sign-in in the default browser
 
 - The app no longer embeds a web view for sign-in. **Sign in with itslearning** opens the authorize page in the default browser and shows "Continue in your browser". This replaces the embedded WebKitGTK login of 2026-11-19.

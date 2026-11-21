@@ -19,6 +19,41 @@ public sealed class CoursePageFactory(Func<ItslearningClient> client, TimeProvid
 
     public CoursePlansViewModel Plans(int courseId) => new(client, time, openUrl, files, courseId);
 
+    public PlanPageViewModel PlanPage(int courseId, string courseTitle, PlanItemViewModel plan, Action openCourse) =>
+        new(this, courseId, courseTitle, plan, openCourse);
+
+    /// <summary>
+    /// The course's plans that run today (local date): a single-day plan dated today, or a period that includes today. With
+    /// their material, like the course overview's plans.
+    /// </summary>
+    internal async Task<List<PlanItemViewModel>> ActivePlansAsync(int courseId, CancellationToken ct)
+    {
+        var c = client();
+        var now = time.GetUtcNow();
+        var zone = time.LocalTimeZone;
+        var today = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(now, zone).DateTime);
+        // The planner returns plans overlapping the window; tomorrow as the end so plans later today are included.
+        var plans = (await c.GetCoursePlansAsync(courseId, today, today.AddDays(1), ct)).Where(p => RunsOn(p, today, zone)).ToList();
+        if (plans.Count == 0) return [];
+        IReadOnlyList<CourseTopic>? topics;
+        try { topics = await c.GetCourseTopicsAsync(courseId, ct); }
+        catch (Exception e) when (e is ItslearningApiException or HttpRequestException) { topics = null; }
+        var materials = await c.GetPlanMaterialsAsync(courseId, topics, plans, ct);
+        var topicNames = topics?.ToDictionary(t => t.TopicId, t => t.TopicName) ?? [];
+        return plans.Select(p => new PlanItemViewModel(p.PlanName, topicNames.GetValueOrDefault(p.TopicId), p.PlanDescription,
+            materials.GetValueOrDefault(p.PlanId), Texts.Span(p.Start, p.Stop, now, zone), openUrl, files)).ToList();
+    }
+
+    /// <summary>True if the plan has a date and <paramref name="day"/> falls within it. An end at midnight belongs to the day before.</summary>
+    internal static bool RunsOn(PlanPreview p, DateOnly day, TimeZoneInfo zone)
+    {
+        if (p.Start is not { } start) return false;
+        var first = TimeZoneInfo.ConvertTime(start, zone);
+        var last = p.Stop is { } stop && stop > start ? TimeZoneInfo.ConvertTime(stop, zone) : first;
+        if (last > first && last.TimeOfDay == TimeSpan.Zero) last = last.AddTicks(-1);
+        return DateOnly.FromDateTime(first.DateTime) <= day && day <= DateOnly.FromDateTime(last.DateTime);
+    }
+
     internal MaterialItemViewModel Item(CourseResource r, string? detail = null) =>
         new(r.ElementId, r.Title, r.Kind, r.Url, openUrl, files, detail);
 }
@@ -399,4 +434,43 @@ public sealed partial class CoursePlansViewModel : ObservableObject
             OnPropertyChanged(nameof(EmptyText));
         }
     }
+}
+
+/// <summary>
+/// One lesson plan on its own page (opened from a course card's active plans): when it runs, its description and material.
+/// Folders in the material open as folder pages (<see cref="FolderOpened"/>); everything else like other material.
+/// </summary>
+public sealed partial class PlanPageViewModel
+{
+    private readonly CoursePageFactory _pages;
+    private readonly Action _openCourse;
+
+    internal PlanPageViewModel(CoursePageFactory pages, int courseId, string courseTitle, PlanItemViewModel plan, Action openCourse)
+    {
+        _pages = pages;
+        _openCourse = openCourse;
+        CourseId = courseId;
+        CourseTitle = courseTitle;
+        Plan = plan;
+    }
+
+    public int CourseId { get; }
+    public string CourseTitle { get; }
+    public PlanItemViewModel Plan { get; }
+
+    /// <summary>Raised with a folder's page when a folder in the plan's material is opened (the platform pushes it).</summary>
+    public event EventHandler<FolderViewModel>? FolderOpened;
+
+    [RelayCommand]
+    private void OpenItem(MaterialItemViewModel item)
+    {
+        if (item.Kind == ResourceKind.Folder)
+            FolderOpened?.Invoke(this, _pages.Folder(CourseId, item.ElementId, item.Title));
+        else if (!item.OpenCommand.IsRunning)
+            item.OpenCommand.Execute(null);
+    }
+
+    /// <summary>Opens the plan's course page.</summary>
+    [RelayCommand]
+    private void OpenCourse() => _openCourse();
 }

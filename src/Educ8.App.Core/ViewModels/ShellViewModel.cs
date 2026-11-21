@@ -25,6 +25,8 @@ public enum AppPage
 {
     Courses,
     Calendar,
+    Notifications,
+    Messages,
     Mcp,
 }
 
@@ -41,18 +43,27 @@ public sealed partial class ShellViewModel : ObservableObject
     private readonly Func<ItslearningClient> _client;
     private readonly IUiDispatcher _dispatcher;
     private readonly CourseCatalog _catalog;
+    private readonly TimeProvider _time;
+    private ITimer? _unreadTimer;
+
+    /// <summary>How often the unread notification count is checked while signed in.</summary>
+    internal static readonly TimeSpan UnreadCountInterval = TimeSpan.FromMinutes(5);
 
     public ShellViewModel(
-        TokenManager tokens, Func<ItslearningClient> client, IUiDispatcher dispatcher, CourseCatalog catalog,
-        LoginViewModel login, CoursesViewModel courses, CalendarViewModel calendar, McpViewModel mcp)
+        TokenManager tokens, Func<ItslearningClient> client, IUiDispatcher dispatcher, CourseCatalog catalog, TimeProvider time,
+        LoginViewModel login, CoursesViewModel courses, CalendarViewModel calendar, NotificationsViewModel notifications, MessagesViewModel messages,
+        McpViewModel mcp)
     {
         _tokens = tokens;
         _client = client;
         _dispatcher = dispatcher;
         _catalog = catalog;
+        _time = time;
         Login = login;
         Courses = courses;
         Calendar = calendar;
+        Notifications = notifications;
+        Messages = messages;
         Mcp = mcp;
         _tokens.SessionChanged += (_, _) => _dispatcher.Post(() => _ = InitializeAsync());
     }
@@ -60,12 +71,16 @@ public sealed partial class ShellViewModel : ObservableObject
     public LoginViewModel Login { get; }
     public CoursesViewModel Courses { get; }
     public CalendarViewModel Calendar { get; }
+    public NotificationsViewModel Notifications { get; }
+    public MessagesViewModel Messages { get; }
     public McpViewModel Mcp { get; }
 
     public IReadOnlyList<NavItem> NavigationItems { get; } =
     [
         new(AppPage.Courses, Strings.NavCourses, AppIcon.Courses),
         new(AppPage.Calendar, Strings.NavCalendar, AppIcon.Calendar),
+        new(AppPage.Notifications, Strings.NavNotifications, AppIcon.Notification),
+        new(AppPage.Messages, Strings.NavMessages, AppIcon.Messages),
         new(AppPage.Mcp, Strings.NavMcp, AppIcon.Mcp),
     ];
 
@@ -100,6 +115,7 @@ public sealed partial class ShellViewModel : ObservableObject
             var me = await _client().GetCurrentPersonAsync();
             UserName = me.DisplayName;
             State = ShellState.SignedIn;
+            StartUnreadCount();
             await ActivateCurrentPageAsync();
         }
         catch (NotAuthenticatedException)
@@ -129,6 +145,8 @@ public sealed partial class ShellViewModel : ObservableObject
         {
             AppPage.Courses => Courses.EnsureLoadedAsync(),
             AppPage.Calendar => Calendar.EnsureLoadedAsync(),
+            AppPage.Notifications => Notifications.RefreshCommand.ExecuteAsync(null), // always fresh when opened
+            AppPage.Messages => Messages.RefreshCommand.ExecuteAsync(null),
             AppPage.Mcp => StartMcpRefresh(),
             _ => Task.CompletedTask,
         };
@@ -139,8 +157,25 @@ public sealed partial class ShellViewModel : ObservableObject
         return Task.CompletedTask;
     }
 
+    /// <summary>The sidebar's unread badges (notifications, messages): checked now and every <see cref="UnreadCountInterval"/> while signed in.</summary>
+    private void StartUnreadCount()
+    {
+        RefreshUnreadCounts();
+        _unreadTimer ??= _time.CreateTimer(_ => _dispatcher.Post(RefreshUnreadCounts), null, UnreadCountInterval, UnreadCountInterval);
+    }
+
+    private void RefreshUnreadCounts()
+    {
+        _ = Notifications.RefreshUnreadCountAsync();
+        _ = Messages.RefreshUnreadCountAsync();
+    }
+
     private void SignedOut()
     {
+        _unreadTimer?.Dispose();
+        _unreadTimer = null;
+        Notifications.Reset();
+        Messages.Reset();
         UserName = null;
         State = ShellState.SignedOut;
         _catalog.Clear();
