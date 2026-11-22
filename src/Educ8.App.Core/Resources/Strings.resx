@@ -76,6 +76,9 @@
   <data name="LinkOpen" xml:space="preserve"><value>Open link</value></data>
   <data name="PageEmpty" xml:space="preserve"><value>This page is empty.</value></data>
   <data name="PageBlockUnsupported" xml:space="preserve"><value>This part of the page can't be shown here.</value></data>
+  <data name="SaveCopy" xml:space="preserve"><value>Save a copy…</value></data>
+  <data name="SavedTo" xml:space="preserve"><value>Saved to {0}</value></data>
+  <data name="SaveFailed" xml:space="preserve"><value>Couldn't save the file: {0}</value></data>
   <data name="OpenHere" xml:space="preserve"><value>Open</value></data>
   <data name="Opening" xml:space="preserve"><value>Opening…</value></data>
   <data name="OpenHereFailed" xml:space="preserve"><value>Couldn't open it here ({0}). Opened it in itslearning instead.</value></data>

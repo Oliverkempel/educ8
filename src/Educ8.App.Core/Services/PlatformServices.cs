@@ -23,3 +23,9 @@ public interface IPickFiles
 {
     Task<IReadOnlyList<string>> PickFilesAsync(string title, CancellationToken ct = default);
 }
+
+/// <summary>Asks the user where to save a file (the platform's save dialog, starting in their Downloads folder). Null when they cancel.</summary>
+public interface IPickSaveLocation
+{
+    Task<string?> PickSaveLocationAsync(string suggestedName, CancellationToken ct = default);
+}

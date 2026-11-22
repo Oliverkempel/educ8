@@ -12,7 +12,7 @@ internal static class Icons
         AppIcon.Refresh => "view-refresh-symbolic",
         AppIcon.Search => "system-search-symbolic",
         AppIcon.SignOut => "system-log-out-symbolic",
-        AppIcon.OpenExternal => "web-browser-symbolic",
+        AppIcon.OpenExternal => "adw-external-link-symbolic", // opens outside the app (browser or default app)
         AppIcon.OpenInApp => "go-next-symbolic",
         AppIcon.Video => "video-x-generic-symbolic",
         AppIcon.Audio => "audio-x-generic-symbolic",

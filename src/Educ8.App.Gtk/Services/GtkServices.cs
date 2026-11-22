@@ -61,6 +61,29 @@ internal sealed class GtkPickFiles : IPickFiles
     }
 }
 
+/// <summary>Asks where to save a file with GTK's save dialog (portal aware), starting in the user's Downloads folder.</summary>
+internal sealed class GtkPickSaveLocation : IPickSaveLocation
+{
+    public global::Gtk.Window? Parent { get; set; }
+
+    public async Task<string?> PickSaveLocationAsync(string suggestedName, CancellationToken ct = default)
+    {
+        var dialog = global::Gtk.FileDialog.New();
+        dialog.SetModal(true);
+        dialog.SetInitialName(suggestedName);
+        if (GLib.Functions.GetUserSpecialDir(GLib.UserDirectory.DirectoryDownload) is { Length: > 0 } downloads && Directory.Exists(downloads))
+            dialog.SetInitialFolder(Gio.FileHelper.NewForPath(downloads));
+        try
+        {
+            return (await dialog.SaveAsync(Parent))?.GetPath();
+        }
+        catch (GLib.GException)
+        {
+            return null; // dismissed
+        }
+    }
+}
+
 internal static class Launch
 {
     private static readonly bool DebugOn = Environment.GetEnvironmentVariable("EDUC8_DEBUG") is "1" or "true";

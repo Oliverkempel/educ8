@@ -23,6 +23,38 @@ public sealed partial class MaterialItemViewModel : ObservableObject
         SubtitleText = string.IsNullOrEmpty(detail) ? KindText : $"{KindText} · {detail}";
         Icon = AppIcons.For(element.Kind);
         OpenStyle = navigator.StyleOf(element);
+        CanSaveCopy = navigator.ModuleFor(element) is ISavesCopies;
+    }
+
+    /// <summary>True for files: besides opening, a copy can be saved where the user chooses.</summary>
+    public bool CanSaveCopy { get; }
+
+    /// <summary>How far a running download got (0–1), or null when unknown (show an indeterminate bar).</summary>
+    [ObservableProperty]
+    public partial double? DownloadFraction { get; private set; }
+
+    /// <summary>"Saved to Downloads" after a copy was saved (shown in place of the subtitle).</summary>
+    [ObservableProperty]
+    public partial string? NoticeText { get; private set; }
+
+    /// <summary>Downloads the file if needed and asks where to save a copy. <c>SaveCopyCancelCommand</c> stops the download.</summary>
+    [RelayCommand(IncludeCancelCommand = true)]
+    private async Task SaveCopyAsync(CancellationToken ct)
+    {
+        ErrorMessage = NoticeText = null;
+        DownloadFraction = null;
+        if (_navigator.ModuleFor(Element) is not ISavesCopies module) return;
+        try
+        {
+            if (await module.SaveCopyAsync(Element, new Progress<double>(p => DownloadFraction = p), ct) is { } saved) NoticeText = Texts.SavedTo(saved);
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+        }
+        catch (Exception e)
+        {
+            ErrorMessage = string.Format(System.Globalization.CultureInfo.CurrentCulture, Strings.SaveFailed, Texts.Error(e));
+        }
     }
 
     public ElementRef Element { get; }
@@ -66,7 +98,8 @@ public sealed partial class MaterialItemViewModel : ObservableObject
     [RelayCommand(IncludeCancelCommand = true)]
     private async Task OpenAsync(CancellationToken ct)
     {
-        ErrorMessage = null;
-        ErrorMessage = await _navigator.OpenAsync(Element, ct);
+        ErrorMessage = NoticeText = null;
+        DownloadFraction = null;
+        ErrorMessage = await _navigator.OpenAsync(Element, new Progress<double>(p => DownloadFraction = p), ct);
     }
 }

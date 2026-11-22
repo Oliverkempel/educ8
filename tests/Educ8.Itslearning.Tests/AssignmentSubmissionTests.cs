@@ -51,11 +51,19 @@ public class AssignmentSubmissionTests
         var client = sp.GetRequiredService<ItslearningClient>();
         var dir = Path.Combine(t.DataDir, "files");
 
-        var path = await client.SaveAsync(ItslearningClient.AssignmentFilePath(9, 1), dir, "fallback.bin");
+        var reported = new List<double>();
+        var path = await client.SaveAsync(ItslearningClient.AssignmentFilePath(9, 1), dir, "fallback.bin", new SyncProgress(reported.Add));
+        Assert.Equal(1.0, reported.Last()); // the size is known (3 bytes): progress ends at 100 %
         Assert.Equal(Path.Combine(dir, "notes.pdf"), path); // no directories from the server's name
         Assert.Equal([1, 2, 3], await File.ReadAllBytesAsync(path));
 
         await Assert.ThrowsAsync<ItslearningApiException>(() => client.SaveAsync(ItslearningClient.AssignmentFilePath(9, 2), dir, "x.bin"));
         Assert.Equal(["notes.pdf"], Directory.GetFiles(dir).Select(Path.GetFileName));
+    }
+
+    /// <summary>Reports synchronously (System.Progress posts to the thread pool).</summary>
+    private sealed class SyncProgress(Action<double> report) : IProgress<double>
+    {
+        public void Report(double value) => report(value);
     }
 }

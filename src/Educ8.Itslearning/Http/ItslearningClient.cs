@@ -154,7 +154,7 @@ public sealed class ItslearningClient(HttpClient http)
     /// <paramref name="directory"/>, streaming (no size cap). Written to a <c>.part</c> file first, so a cancelled or failed download
     /// leaves nothing behind. Returns the saved path. The signed file URL it redirects to is never logged.
     /// </summary>
-    public async Task<string> SaveAsync(string relativePath, string directory, string fallbackName, CancellationToken ct = default)
+    public async Task<string> SaveAsync(string relativePath, string directory, string fallbackName, IProgress<double>? progress = null, CancellationToken ct = default)
     {
         using var response = await http.GetAsync(relativePath, HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false);
         await EnsureSuccessAsync(response, relativePath, ct).ConfigureAwait(false);
@@ -167,7 +167,7 @@ public sealed class ItslearningClient(HttpClient http)
         {
             await using (var stream = await response.Content.ReadAsStreamAsync(ct).ConfigureAwait(false))
             await using (var file = File.Create(partial))
-                await stream.CopyToAsync(file, ct).ConfigureAwait(false);
+                await Content.DownloadProgress.CopyAsync(stream, file, response.Content.Headers.ContentLength, progress, ct).ConfigureAwait(false);
             File.Move(partial, path, overwrite: true);
         }
         catch

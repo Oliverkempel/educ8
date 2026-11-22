@@ -31,9 +31,17 @@ public interface IElementModule
 
     /// <summary>
     /// Opens the element: returns the page to show, or null when the module already finished (file opened, link launched).
-    /// Throwing makes the caller report the problem and open the element in the browser instead.
+    /// Throwing makes the caller report the problem and open the element in the browser instead. Modules that download report the
+    /// share done (0–1) to <paramref name="progress"/> when they know it.
     /// </summary>
-    Task<ElementPageViewModel?> OpenAsync(ElementRef element, ElementNavigator navigator, CancellationToken ct);
+    Task<ElementPageViewModel?> OpenAsync(ElementRef element, ElementNavigator navigator, IProgress<double>? progress, CancellationToken ct);
+}
+
+/// <summary>A module whose elements are files the user can also save a copy of (in addition to opening them).</summary>
+public interface ISavesCopies
+{
+    /// <summary>Downloads the element if needed and asks where to save a copy. Returns the saved path, or null when cancelled.</summary>
+    Task<string?> SaveCopyAsync(ElementRef element, IProgress<double>? progress, CancellationToken ct);
 }
 
 public static class ElementModules

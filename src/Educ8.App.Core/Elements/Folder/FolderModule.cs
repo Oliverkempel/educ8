@@ -7,7 +7,7 @@ public sealed class FolderModule : IElementModule
 
     public OpenStyle Style => OpenStyle.InApp;
 
-    public async Task<ElementPageViewModel?> OpenAsync(ElementRef element, ElementNavigator navigator, CancellationToken ct)
+    public async Task<ElementPageViewModel?> OpenAsync(ElementRef element, ElementNavigator navigator, IProgress<double>? progress, CancellationToken ct)
     {
         // Event links don't say which course the folder is in: look it up.
         var courseId = element.CourseId ?? (await navigator.Client().GetResourceAsync(element.ElementId, ct)).CourseId;

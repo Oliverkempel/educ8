@@ -35,6 +35,9 @@ public sealed class ContentUnavailableException(string message) : Exception(mess
 /// <summary>Downloads course files to disk (implemented by <see cref="LearningToolContentReader"/>).</summary>
 public interface ICourseFileSource
 {
-    /// <summary>Saves File element <paramref name="elementId"/> into <paramref name="directory"/> and returns its path.</summary>
-    Task<string> SaveFileAsync(int elementId, string directory, CancellationToken ct = default);
+    /// <summary>
+    /// Saves File element <paramref name="elementId"/> into <paramref name="directory"/> and returns its path. Reports the share
+    /// downloaded (0–1) to <paramref name="progress"/> when the size is known.
+    /// </summary>
+    Task<string> SaveFileAsync(int elementId, string directory, IProgress<double>? progress = null, CancellationToken ct = default);
 }

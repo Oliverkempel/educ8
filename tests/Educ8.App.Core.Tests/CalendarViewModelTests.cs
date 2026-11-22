@@ -162,6 +162,8 @@ public class CalendarViewModelTests
         var running = slow.OpenCommand.ExecuteAsync(null);
         Assert.True(slow.OpenCommand.IsRunning);
         Assert.True(slow.OpenCancelCommand.CanExecute(null));
+        for (var i = 0; i < 100 && slow.DownloadFraction is null; i++) await Task.Delay(10);
+        Assert.Equal(0.5, slow.DownloadFraction); // progress for the row's progress line
         slow.OpenCancelCommand.Execute(null);
         await running;
         Assert.False(slow.OpenCommand.IsRunning);

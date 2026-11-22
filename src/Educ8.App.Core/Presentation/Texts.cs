@@ -184,4 +184,8 @@ public static partial class Texts
     /// <summary>The placeholder's button: "Watch" for videos with a link, "Open" for other links, else "Open in itslearning".</summary>
     public static string UnsupportedAction(Documents.RichUnsupportedKind kind, bool hasLink) =>
         !hasLink ? Strings.OpenInItslearning : kind is Documents.RichUnsupportedKind.Video ? Strings.ContentWatch : Strings.ContentOpenLink;
+
+    /// <summary>"Saved to Downloads": the folder's name (the full path can be long, or a portal path in a sandbox).</summary>
+    public static string SavedTo(string path) =>
+        string.Format(CultureInfo.CurrentCulture, Strings.SavedTo, Path.GetFileName(Path.GetDirectoryName(path)) is { Length: > 0 } folder ? folder : path);
 }

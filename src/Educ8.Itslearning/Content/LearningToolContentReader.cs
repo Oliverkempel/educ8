@@ -19,7 +19,9 @@ internal sealed class DefaultWebHandlerFactory : IWebHandlerFactory
         UseCookies = true,
         AllowAutoRedirect = true,
         MaxAutomaticRedirections = 10,
-        AutomaticDecompression = DecompressionMethods.All,
+        // No compression: itslearning's file cache (filecache.itslearning.com) answers a request that accepts compression with a
+        // brotli stream and no Content-Length, so download progress can't be shown. Pages are small enough uncompressed.
+        AutomaticDecompression = DecompressionMethods.None,
         PooledConnectionLifetime = TimeSpan.FromMinutes(5),
     };
 }
@@ -104,7 +106,7 @@ public sealed class LearningToolContentReader : ICourseFileSource, IDisposable
     /// Downloads a File element (learning tool 5009) into <paramref name="directory"/>, streamed to disk with no size limit,
     /// and returns the saved file's path. Used to open course files in the user's own applications.
     /// </summary>
-    public async Task<string> SaveFileAsync(int elementId, string directory, CancellationToken ct = default)
+    public async Task<string> SaveFileAsync(int elementId, string directory, IProgress<double>? progress = null, CancellationToken ct = default)
     {
         var tool = await OpenToolAsync(elementId, ct).ConfigureAwait(false);
         var link = WebPageParsers.File(tool.Html, tool.FinalUri);
@@ -124,7 +126,7 @@ public sealed class LearningToolContentReader : ICourseFileSource, IDisposable
         {
             await using (var stream = await response.Content.ReadAsStreamAsync(ct).ConfigureAwait(false))
             await using (var file = File.Create(partial))
-                await stream.CopyToAsync(file, ct).ConfigureAwait(false);
+                await DownloadProgress.CopyAsync(stream, file, response.Content.Headers.ContentLength, progress, ct).ConfigureAwait(false);
             File.Move(partial, path, overwrite: true);
         }
         catch

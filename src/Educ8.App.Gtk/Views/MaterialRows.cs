@@ -19,16 +19,19 @@ internal static class MaterialRows
         var row = Widgets.Row(m.Title, m.SubtitleText);
         row.AddPrefix(Image.NewFromIconName(Icons.Name(m.Icon)));
         var open = Image.NewFromIconName(Icons.Name(m.OpenIcon));
-        var busy = Spinner(16);
-        // While it opens (a file downloading), the open icon becomes a stop button that cancels it.
+        // While it downloads: a progress line along the bottom, and the open icon becomes a stop button that cancels it.
+        var progress = RowProgress.Attach(row);
         var cancel = Button.NewFromIconName(Icons.Name(AppIcon.CancelDownload));
         cancel.AddCssClass("flat");
         cancel.AddCssClass("circular");
         cancel.SetValign(Align.Center);
         cancel.SetTooltipText(Strings.CancelDownload);
         cancel.SetVisible(false);
-        Bind.Command(cancel, m.OpenCancelCommand);
-        row.AddSuffix(busy);
+        cancel.OnClicked += (_, _) =>
+        {
+            if (m.OpenCommand.IsRunning) m.OpenCancelCommand.Execute(null);
+            if (m.SaveCopyCommand.IsRunning) m.SaveCopyCancelCommand.Execute(null);
+        };
         row.AddSuffix(open);
         row.AddSuffix(cancel);
         row.SetActivatable(m.CanOpen);
@@ -38,15 +41,20 @@ internal static class MaterialRows
             Launch.Debug($"row activated: {m.Kind}, style={m.OpenStyle}, url={Launch.Describe(m.Url)}");
             if (!m.OpenCommand.IsRunning) m.OpenCommand.Execute(null);
         };
-        Bind.Property(m.OpenCommand, () =>
+        void ShowState()
         {
-            var running = m.OpenCommand.IsRunning;
-            busy.SetVisible(running);
+            var running = m.OpenCommand.IsRunning || m.SaveCopyCommand.IsRunning;
+            progress.Show(running, m.DownloadFraction);
             open.SetVisible(!running);
             cancel.SetVisible(running);
-            row.SetSubtitle(running ? m.BusyText : m.ErrorMessage ?? m.SubtitleText);
-        }, nameof(m.OpenCommand.IsRunning));
-        Bind.Property(m, () => row.SetSubtitle(m.ErrorMessage ?? m.SubtitleText), nameof(MaterialItemViewModel.ErrorMessage));
+            row.SetSubtitle(running ? m.BusyText : m.ErrorMessage ?? m.NoticeText ?? m.SubtitleText);
+        }
+        Bind.Property(m.OpenCommand, ShowState, nameof(m.OpenCommand.IsRunning));
+        Bind.Property(m.SaveCopyCommand, ShowState, nameof(m.SaveCopyCommand.IsRunning));
+        Bind.Property(m, ShowState, nameof(MaterialItemViewModel.ErrorMessage), nameof(MaterialItemViewModel.NoticeText),
+            nameof(MaterialItemViewModel.DownloadFraction));
+        // Files: "Save a copy…" in the right-click menu (a click on the row opens them).
+        if (m.CanSaveCopy) ContextMenu.Attach(row, (Strings.OpenFile, m.OpenCommand), (Strings.SaveCopy, m.SaveCopyCommand));
         return row;
     }
 }

@@ -23,13 +23,14 @@ Legend: ✅ done · 🚧 in progress · ⏳ not started · ➖ not applicable
 | Link (tool 5010): opens the real target; description page when there is one | ✅ `LinkModule`, `LinkViewModel` | ✅ `LinkPage` | ⏳ | ⏳ |
 | Assignment (tool 5006): description, files, answer, status, feedback | ✅ `AssignmentModule`, `AssignmentViewModel` | ✅ `AssignmentPage` | ⏳ | ⏳ |
 | Assignment hand-in (first hand-in, individual; review + confirm) | ✅ `AssignmentHandIn`, `HandInViewModel`, `IPickFiles` | ✅ `HandInDialog` (`Adw.Dialog` + `Adw.AlertDialog`), `GtkPickFiles` | ⏳ | ⏳ |
-| Open course files in the default app (download to cache, `IOpenFile`; stop button cancels a running download via `OpenCancelCommand`) | ✅ `MaterialItemViewModel` + `MaterialFiles` | ✅ `GtkOpenFile` (`Gtk.FileLauncher`), `MaterialRows` | ⏳ | ⏳ |
+| Save a copy of a file where the user chooses (course and assignment files; save dialog starts in Downloads; reuses the cached download) | ✅ `ISavesCopies` (`FileModule`), `MaterialFiles.SaveCopyAsync`, `IPickSaveLocation` | ✅ right-click / long-press menu on file rows (`Ui/ContextMenu.cs`, stock `PopoverMenu`), `GtkPickSaveLocation` (`Gtk.FileDialog.SaveAsync`) | ⏳ | ⏳ |
+| Open course files in the default app (download to cache, `IOpenFile`; while downloading, a thin progress line along the row's bottom (`DownloadFraction`; pulses when the size is unknown) and the open icon becomes a stop button (`OpenCancelCommand`)) | ✅ `MaterialItemViewModel` + `MaterialFiles` | ✅ `GtkOpenFile` (`Gtk.FileLauncher`), `MaterialRows` | ⏳ | ⏳ |
 
 ## Platform mappings to keep complete
 
 - **Element pages:** every `ElementPageViewModel` subclass needs a page builder on each platform (GTK: an arm in `Views/Elements/ElementPages.cs`). Without one the generic page shows, with "Open in itslearning".
 - **Rich text:** each platform renders `RichDocument` (GTK: `Ui/RichTextView.cs`).
-- **`IPickFiles`:** one implementation per platform (GTK: `GtkPickFiles`, `Gtk.FileDialog`).
+- **`IPickFiles`, `IPickSaveLocation`:** one implementation each per platform (GTK: `GtkPickFiles`, `GtkPickSaveLocation`, both `Gtk.FileDialog`).
 
 - **Icons:** every `AppIcon` value (`src/Educ8.App.Core/Presentation/AppIcon.cs`) needs a GNOME symbolic icon, an SF Symbol and a Segoe Fluent Icons glyph in each platform's icon map.
 - **Platform services:** `IUiDispatcher`, `IOpenUrl` and `IOpenFile` (open a local file with its default app) each need an implementation per platform.

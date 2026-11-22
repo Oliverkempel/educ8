@@ -138,6 +138,13 @@ public class AssignmentTests
         await a.FeedbackFiles[0].OpenCommand.ExecuteAsync(null);
         Assert.Equal(["instructions.docx", "feedback.txt"], h.OpenFile.Opened.Select(Path.GetFileName));
         Assert.Equal([1, 2, 3], await File.ReadAllBytesAsync(h.OpenFile.Opened[0]));
+
+        var downloads = Path.Combine(h.CacheDirectory, "Downloads");
+        Directory.CreateDirectory(downloads);
+        h.SaveLocation.Folder = downloads;
+        await a.TeacherFiles[0].SaveCopyCommand.ExecuteAsync(null);
+        Assert.Equal([1, 2, 3], await File.ReadAllBytesAsync(Path.Combine(downloads, "instructions.docx")));
+        Assert.Equal("Saved to Downloads", a.TeacherFiles[0].NoticeText);
     }
 
     [Fact]

@@ -163,21 +163,31 @@ internal static class Screenshots
         };
         var found = new Dictionary<string, Core.Elements.ElementRef>();
         var folders = new Queue<Core.Elements.FolderViewModel>([root]);
+        Core.Elements.FolderViewModel? filesFolder = null;
         for (var listings = 0; folders.Count > 0 && listings < 10 && found.Count < wanted.Length; listings++)
         {
             var folder = folders.Dequeue();
             await folder.EnsureLoadedAsync();
+            if (filesFolder is null && folder.Items.Any(i => i.CanSaveCopy)) filesFolder = folder;
             foreach (var element in folder.Items.Select(i => i.Element))
             {
                 foreach (var (file, match) in wanted)
                     if (!found.ContainsKey(file) && match(element) && navigator.StyleOf(element) == Core.Elements.OpenStyle.InApp)
                         found[file] = element;
                 if (element.Kind == Itslearning.Models.ResourceKind.Folder
-                    && await navigator.ModuleFor(element)!.OpenAsync(element, navigator, CancellationToken.None) is Core.Elements.FolderViewModel sub)
+                    && await navigator.ModuleFor(element)!.OpenAsync(element, navigator, null, CancellationToken.None) is Core.Elements.FolderViewModel sub)
                     folders.Enqueue(sub);
             }
         }
         foreach (var (file, element) in found) await ShowElementAsync(shell, main, element, Path.Combine(dir, file));
+        if (filesFolder is not null) // file rows: open icon plus "Save a copy…"
+        {
+            navigator.Show(filesFolder);
+            await Task.Delay(1000);
+            await Save(main.Window, Path.Combine(dir, "files.png"));
+            main.Courses.Navigation.Pop();
+            await Task.Delay(300);
+        }
     }
 
     /// <summary>An assignment from the first courses' open tasks or recent changes (read-only, plus the empty hand-in dialog).</summary>
@@ -205,7 +215,7 @@ internal static class Screenshots
     private static async Task ShowElementAsync(ShellViewModel shell, MainWindow main, Core.Elements.ElementRef element, string path)
     {
         var navigator = shell.Elements;
-        if (await navigator.ModuleFor(element)!.OpenAsync(element, navigator, CancellationToken.None) is not { } page) return;
+        if (await navigator.ModuleFor(element)!.OpenAsync(element, navigator, null, CancellationToken.None) is not { } page) return;
         navigator.Show(page);
         await Until(() => page.State != Core.Elements.ElementPageState.Loading && !page.IsLoading);
         await Task.Delay(1000);

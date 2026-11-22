@@ -138,10 +138,15 @@ Caveats: this is **web scraping of undocumented pages**, so it may break with it
 - `courses/resources/{id}/v1` works for folders too (`ElementType: "Folder"`).
 - `courses/{id}/resources/search/v1` matches **titles** across the whole course tree.
 
+## File downloads and compression (2026-11-22)
+
+- `filecache.itslearning.com` (where file downloads end up) answers a request with `Accept-Encoding: gzip, deflate, br` with a **brotli** stream, chunked, **without `Content-Length`**; without `Accept-Encoding` it sends the file as-is with its `Content-Length` (checked with a 4 MB PDF). The web-session client therefore doesn't ask for compression (`DecompressionMethods.None`), so downloads can show real progress. Pages and tool pages are small enough uncompressed (a Page still read in about 1.3 s). The REST client never asked for compression.
+
 ## Element kinds in a student's courses (2026-11-21)
 
 - Folder listings of the 12 most recent courses (120 listings): File 5009 (216), Folder (125), Link 5010 (117), Page 5 (43), CustomActivity (43), Assignment 5006 (12), `Discussion` (5), Survey 5050 (3), Test 5002 (2), tool 5015 (1, unknown). No learning paths.
-- All 43 CustomActivity elements are in the course tasks API (`Active`/`Completed`), but none has a `Description` there. Their `Url` is `main.aspx?CourseID=…&ElementID=…&ElementType=…`.
+- All 43 CustomActivity elements are in the course tasks API (`Active`/`Completed`), but none has a `Description` there. Their `Url` is `main.aspx?CourseID=…&ElementID=…&ElementType=…`; their `ContentUrl` is `{site}/CustomActivity/CustomActivityOverview.aspx?CustomActivityId=…`.
+- **The activity itself is readable through the web session** (same SSO chain as Pages, but no learning-tool iframe hop: `ContentUrl` is on the school's own host). `CustomActivityOverview.aspx` is server-rendered: the description in `.h-userinput` (under `<h2>Description</h2>`), the completion switch `#…TaskCompletedToggle_toggle` (`toggleon`/`toggleoff`; changing it is an ASP.NET postback, i.e. a write), and the attached files as JSON in a script: `fileListControl.initialize([{Name, Metadata:{id, signedFileRepoId, …}}, …])`. Files download from the config's `DownloadEndpointUrl`, `/CustomActivity/Proxy/DownloadRedirect.ashx?CustomActivityId=…&ChildId=0&fileRepoId={fileRepoId}` with **`signedFileRepoId`** (URL-encoded) → 302 to signed `filecache.itslearning.com` (the plain `Metadata.id` gives a 500).
 - Three links read through the web chain: all had http(s) targets, none had a description, about 1.4 s each (the first read includes the SSO hop).
 - The `Terms` list in `assignments/{e}/settings/v1` is "the list of terms used in course" (academic terms), not terms to accept.
 

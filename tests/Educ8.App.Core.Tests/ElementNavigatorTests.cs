@@ -90,4 +90,33 @@ public class ElementNavigatorTests
         Assert.Equal("https://school.itslearning.com/folder", Assert.Single(h.OpenUrl.Opened).ToString());
         Assert.Empty(h.Pages);
     }
+
+    [Fact]
+    public async Task A_file_can_be_saved_where_the_user_chooses_and_reuses_the_download()
+    {
+        using var h = new AppTestHost();
+        var file = h.Elements.Item(new ElementRef(72, "slides.pdf", "LearningToolElement", 5009, 10, null));
+        var page = h.Elements.Item(new ElementRef(5, "Guides", "LearningToolElement", 5, 10, null));
+        Assert.True(file.CanSaveCopy);
+        Assert.False(page.CanSaveCopy);
+
+        var downloads = Path.Combine(h.CacheDirectory, "Downloads");
+        Directory.CreateDirectory(downloads);
+        h.SaveLocation.Folder = downloads;
+        await file.SaveCopyCommand.ExecuteAsync(null);
+
+        Assert.Equal(["element-72.pdf"], h.SaveLocation.Suggested);
+        Assert.Equal("%PDF-1.4", await File.ReadAllTextAsync(Path.Combine(downloads, "element-72.pdf")));
+        Assert.Equal("Saved to Downloads", file.NoticeText);
+        Assert.Empty(h.OpenFile.Opened); // saving doesn't open it
+
+        await file.OpenCommand.ExecuteAsync(null); // opening afterwards uses the same download
+        Assert.Equal([72], h.Files.Downloads);
+        Assert.Null(file.NoticeText);
+
+        h.SaveLocation.Folder = null; // the user cancels the dialog
+        await file.SaveCopyCommand.ExecuteAsync(null);
+        Assert.Null(file.NoticeText);
+        Assert.Null(file.ErrorMessage);
+    }
 }

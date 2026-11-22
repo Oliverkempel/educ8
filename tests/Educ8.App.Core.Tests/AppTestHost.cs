@@ -18,6 +18,7 @@ public sealed class AppTestHost : IDisposable
     public RecordingOpenUrl OpenUrl { get; } = new();
     public RecordingOpenFile OpenFile { get; } = new();
     public FakePickFiles PickFiles { get; } = new();
+    public FakePickSaveLocation SaveLocation { get; } = new();
     public FakeCourseFileSource Files { get; } = new();
     public string CacheDirectory { get; } = Path.Combine(Path.GetTempPath(), "educ8-tests", Guid.NewGuid().ToString("N"));
     public ServiceProvider Provider { get; }
@@ -29,10 +30,11 @@ public sealed class AppTestHost : IDisposable
         T.Services.AddSingleton<IOpenUrl>(OpenUrl);
         T.Services.AddSingleton<IOpenFile>(OpenFile);
         T.Services.AddSingleton<IPickFiles>(PickFiles);
+        T.Services.AddSingleton<IPickSaveLocation>(SaveLocation);
         T.Services.AddEduc8AppCore();
         // Registered after AddEduc8AppCore, so these win: no web downloads, and a throwaway cache folder.
         T.Services.AddSingleton<ICourseFileSource>(Files);
-        T.Services.AddSingleton(sp => new MaterialFiles(Files, OpenFile, sp.GetRequiredService<Func<Itslearning.Http.ItslearningClient>>()) { CacheDirectory = CacheDirectory });
+        T.Services.AddSingleton(sp => new MaterialFiles(Files, OpenFile, sp.GetRequiredService<Func<Itslearning.Http.ItslearningClient>>(), SaveLocation) { CacheDirectory = CacheDirectory });
         T.Services.AddSingleton(sp => new MessageAttachments(OpenFile, OpenUrl) { CacheDirectory = Path.Combine(CacheDirectory, "messages") });
         Provider = T.Build();
         Elements.PageOpened += (_, page) => Pages.Add(page);
@@ -75,6 +77,19 @@ public sealed class RecordingOpenUrl : IOpenUrl
     public void Open(Uri url) => Opened.Add(url);
 }
 
+/// <summary>Answers the save dialog with a file named like the suggestion in <see cref="Folder"/> (null = the user cancels).</summary>
+public sealed class FakePickSaveLocation : IPickSaveLocation
+{
+    public string? Folder { get; set; }
+    public List<string> Suggested { get; } = [];
+
+    public Task<string?> PickSaveLocationAsync(string suggestedName, CancellationToken ct = default)
+    {
+        Suggested.Add(suggestedName);
+        return Task.FromResult(Folder is null ? null : Path.Combine(Folder, suggestedName));
+    }
+}
+
 /// <summary>Returns <see cref="Next"/> as the user's choice.</summary>
 public sealed class FakePickFiles : IPickFiles
 {
@@ -97,11 +112,15 @@ public sealed class FakeCourseFileSource : ICourseFileSource
     /// <summary>When set, downloads wait for it (or for cancellation), like a slow file.</summary>
     public TaskCompletionSource? Gate { get; set; }
 
-    public async Task<string> SaveFileAsync(int elementId, string directory, CancellationToken ct = default)
+    public async Task<string> SaveFileAsync(int elementId, string directory, IProgress<double>? progress = null, CancellationToken ct = default)
     {
         Downloads.Add(elementId);
         if (Fail is not null) throw Fail;
-        if (Gate is not null) await Gate.Task.WaitAsync(ct);
+        if (Gate is not null)
+        {
+            progress?.Report(0.5); // halfway while held
+            await Gate.Task.WaitAsync(ct);
+        }
         Directory.CreateDirectory(directory);
         var path = Path.Combine(directory, $"element-{elementId}.pdf");
         await File.WriteAllTextAsync(path, "%PDF-1.4", ct);

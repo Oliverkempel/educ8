@@ -35,7 +35,10 @@ public sealed class ElementNavigator(IEnumerable<IElementModule> modules, IOpenU
     /// Opens the element with its module, or in the browser. Returns a message to show when the module failed (the element was
     /// then opened in the browser instead); null otherwise. Cancelling stops quietly.
     /// </summary>
-    internal async Task<string?> OpenAsync(ElementRef element, CancellationToken ct)
+    internal async Task<string?> OpenAsync(ElementRef element, CancellationToken ct) => await OpenAsync(element, null, ct);
+
+    /// <inheritdoc cref="OpenAsync(ElementRef, CancellationToken)"/>
+    internal async Task<string?> OpenAsync(ElementRef element, IProgress<double>? progress, CancellationToken ct)
     {
         if (ModuleFor(element) is not { } module)
         {
@@ -44,7 +47,7 @@ public sealed class ElementNavigator(IEnumerable<IElementModule> modules, IOpenU
         }
         try
         {
-            var page = await module.OpenAsync(element, this, ct);
+            var page = await module.OpenAsync(element, this, progress, ct);
             if (page is not null && !ct.IsCancellationRequested) Show(page);
             return null;
         }

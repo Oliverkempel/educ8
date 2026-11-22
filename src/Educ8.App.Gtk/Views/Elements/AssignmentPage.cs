@@ -147,28 +147,35 @@ internal static class AssignmentPage
             var row = Row(f.Name, f.DetailText);
             row.AddPrefix(Image.NewFromIconName(Icons.Name(AppIcon.File)));
             var open = Image.NewFromIconName(Icons.Name(AppIcon.OpenExternal));
-            var busy = Spinner(16);
+            var progress = RowProgress.Attach(row);
             var cancel = Button.NewFromIconName(Icons.Name(AppIcon.CancelDownload));
             cancel.AddCssClass("flat");
             cancel.AddCssClass("circular");
             cancel.SetValign(Align.Center);
             cancel.SetTooltipText(Strings.CancelDownload);
-            Bind.Command(cancel, f.OpenCancelCommand);
-            row.AddSuffix(busy);
+            cancel.OnClicked += (_, _) =>
+            {
+                if (f.OpenCommand.IsRunning) f.OpenCancelCommand.Execute(null);
+                if (f.SaveCopyCommand.IsRunning) f.SaveCopyCancelCommand.Execute(null);
+            };
             row.AddSuffix(open);
+            ContextMenu.Attach(row, (Strings.OpenFile, f.OpenCommand), (Strings.SaveCopy, f.SaveCopyCommand));
             row.AddSuffix(cancel);
             row.SetActivatable(true);
             row.SetTooltipText(Strings.OpenFile);
             row.OnActivated += (_, _) => { if (!f.OpenCommand.IsRunning) f.OpenCommand.Execute(null); };
-            Bind.Property(f.OpenCommand, () =>
+            void ShowState()
             {
-                var running = f.OpenCommand.IsRunning;
-                busy.SetVisible(running);
+                var running = f.OpenCommand.IsRunning || f.SaveCopyCommand.IsRunning;
+                progress.Show(running, f.DownloadFraction);
                 open.SetVisible(!running);
                 cancel.SetVisible(running);
-                row.SetSubtitle(running ? Strings.Downloading : f.ErrorMessage ?? f.DetailText);
-            }, nameof(f.OpenCommand.IsRunning));
-            Bind.Property(f, () => row.SetSubtitle(f.ErrorMessage ?? f.DetailText), nameof(AssignmentFileItemViewModel.ErrorMessage));
+                row.SetSubtitle(running ? Strings.Downloading : f.ErrorMessage ?? f.NoticeText ?? f.DetailText);
+            }
+            Bind.Property(f.OpenCommand, ShowState, nameof(f.OpenCommand.IsRunning));
+            Bind.Property(f.SaveCopyCommand, ShowState, nameof(f.SaveCopyCommand.IsRunning));
+            Bind.Property(f, ShowState, nameof(AssignmentFileItemViewModel.ErrorMessage), nameof(AssignmentFileItemViewModel.NoticeText),
+                nameof(AssignmentFileItemViewModel.DownloadFraction));
             list.Append(row);
         }
         return list;

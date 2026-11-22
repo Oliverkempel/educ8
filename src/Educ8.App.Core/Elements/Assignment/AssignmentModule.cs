@@ -19,7 +19,7 @@ public sealed class AssignmentModule(LearningToolContentReader content, Material
 
     public OpenStyle Style => OpenStyle.InApp;
 
-    public Task<ElementPageViewModel?> OpenAsync(ElementRef element, ElementNavigator navigator, CancellationToken ct) =>
+    public Task<ElementPageViewModel?> OpenAsync(ElementRef element, ElementNavigator navigator, IProgress<double>? progress, CancellationToken ct) =>
         Task.FromResult<ElementPageViewModel?>(new AssignmentViewModel(element, navigator, content, files, time, handIn));
 }
 
@@ -220,13 +220,42 @@ public sealed partial class AssignmentFileItemViewModel : ObservableObject
     [ObservableProperty]
     public partial string? ErrorMessage { get; private set; }
 
+    /// <summary>How far a running download got (0–1), or null when unknown.</summary>
+    [ObservableProperty]
+    public partial double? DownloadFraction { get; private set; }
+
+    /// <summary>"Saved to Downloads" after a copy was saved.</summary>
+    [ObservableProperty]
+    public partial string? NoticeText { get; private set; }
+
+    /// <summary>Downloads the file if needed and asks where to save a copy.</summary>
+    [RelayCommand(IncludeCancelCommand = true)]
+    private async Task SaveCopyAsync(CancellationToken ct)
+    {
+        ErrorMessage = NoticeText = null;
+        DownloadFraction = null;
+        try
+        {
+            if (await _files.SaveCopyAsync(await _files.DownloadRestFileAsync(_path, _cacheKey, Name, new Progress<double>(p => DownloadFraction = p), ct), ct) is { } saved)
+                NoticeText = Texts.SavedTo(saved);
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+        }
+        catch (Exception e)
+        {
+            ErrorMessage = string.Format(CultureInfo.CurrentCulture, Strings.SaveFailed, Texts.Error(e));
+        }
+    }
+
     [RelayCommand(IncludeCancelCommand = true)]
     private async Task OpenAsync(CancellationToken ct)
     {
-        ErrorMessage = null;
+        ErrorMessage = NoticeText = null;
+        DownloadFraction = null;
         try
         {
-            await _files.OpenRestFileAsync(_path, _cacheKey, Name, ct);
+            await _files.OpenRestFileAsync(_path, _cacheKey, Name, new Progress<double>(p => DownloadFraction = p), ct);
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {

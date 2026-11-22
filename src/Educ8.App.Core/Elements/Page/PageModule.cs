@@ -13,7 +13,7 @@ public sealed class PageModule(LearningToolContentReader content) : IElementModu
 
     public OpenStyle Style => OpenStyle.InApp;
 
-    public Task<ElementPageViewModel?> OpenAsync(ElementRef element, ElementNavigator navigator, CancellationToken ct) =>
+    public Task<ElementPageViewModel?> OpenAsync(ElementRef element, ElementNavigator navigator, IProgress<double>? progress, CancellationToken ct) =>
         Task.FromResult<ElementPageViewModel?>(new ContentPageViewModel(element, navigator, content));
 }
 

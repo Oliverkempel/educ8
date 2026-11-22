@@ -18,7 +18,7 @@ public sealed class LinkModule(LearningToolContentReader content) : IElementModu
 
     public OpenStyle Style => OpenStyle.Browser;
 
-    public async Task<ElementPageViewModel?> OpenAsync(ElementRef element, ElementNavigator navigator, CancellationToken ct)
+    public async Task<ElementPageViewModel?> OpenAsync(ElementRef element, ElementNavigator navigator, IProgress<double>? progress, CancellationToken ct)
     {
         if (!_links.TryGetValue(element.ElementId, out var link))
             _links[element.ElementId] = link = await content.ReadLinkAsync(element.ElementId, ct);
